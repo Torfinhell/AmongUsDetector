@@ -37,7 +37,7 @@ def train_fcos(cfg: ModelConfig):
     generate(
         "../data/image_train",
         background_folder=None,
-        num_generations=100,
+        num_generations=1000,
         num_figures=5,
         augment=True,
         random_color=True,

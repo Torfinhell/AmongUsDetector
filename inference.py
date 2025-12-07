@@ -1,20 +1,17 @@
 import os
 import torch
 import cv2
+import argparse
 from glob import glob
 from src.models.fcos import ModelFcos
 from src.transforms.fcos_transform import FcosTransform
 
 
-def load_checkpoint(checkpoint_dir="checkpoints"):
-    """Load the latest checkpoint from the checkpoints directory"""
-    checkpoint_files = sorted(glob(os.path.join(checkpoint_dir, "*.ckpt")))
+def load_checkpoint(checkpoint_path):
+    """Load checkpoint from the specified path"""
+    if not os.path.exists(checkpoint_path):
+        raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
 
-    if not checkpoint_files:
-        raise FileNotFoundError(f"No checkpoints found in {checkpoint_dir}")
-
-    # Load the first checkpoint (or you could load the best one based on loss)
-    checkpoint_path = checkpoint_files[0]
     print(f"Loading checkpoint: {checkpoint_path}")
 
     model = ModelFcos.load_from_checkpoint(checkpoint_path)
@@ -109,26 +106,21 @@ def draw_boxes(image, boxes, scores, labels, confidence_threshold=0.5):
     return image_with_boxes
 
 
-def run_inference(
-    image_dir="data/image_train/images",
-    output_dir="output",
-    checkpoint_dir="checkpoints",
-    confidence_threshold=0.5,
-):
+def run_inference(image_dir, output_dir, checkpoint_path, confidence_threshold=0.5):
     """
     Run inference on all images in a directory and save results with bounding boxes
 
     Args:
         image_dir: directory containing images to process
         output_dir: directory to save output images with bounding boxes
-        checkpoint_dir: directory containing model checkpoints
+        checkpoint_path: path to the model checkpoint file
         confidence_threshold: confidence threshold for drawing boxes
     """
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
     # Load model
-    model = load_checkpoint(checkpoint_dir)
+    model = load_checkpoint(checkpoint_path)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
@@ -245,4 +237,39 @@ def run_inference(
 
 
 if __name__ == "__main__":
-    run_inference()
+    parser = argparse.ArgumentParser(
+        description="Run FCOS inference on images in a folder"
+    )
+    parser.add_argument(
+        "--input",
+        type=str,
+        default="data/image_train/images",
+        help="Path to input folder containing images (default: data/image_train/images)",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="output",
+        help="Path to output folder for results (default: output)",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        required=True,
+        help="Path to model checkpoint file (required)",
+    )
+    parser.add_argument(
+        "--confidence",
+        type=float,
+        default=0.5,
+        help="Confidence threshold for drawing boxes (default: 0.5)",
+    )
+
+    args = parser.parse_args()
+
+    run_inference(
+        image_dir=args.input,
+        output_dir=args.output,
+        checkpoint_path=args.checkpoint,
+        confidence_threshold=args.confidence,
+    )
