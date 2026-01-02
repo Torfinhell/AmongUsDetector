@@ -3,7 +3,7 @@ import torch
 import cv2
 import argparse
 from glob import glob
-from src.models.fcos import ModelFcos
+from models.fcos_pretrained import ModelFcosPretrained
 from src.transforms.fcos_transform import FcosTransform
 
 
@@ -14,7 +14,7 @@ def load_checkpoint(checkpoint_path):
 
     print(f"Loading checkpoint: {checkpoint_path}")
 
-    model = ModelFcos.load_from_checkpoint(checkpoint_path)
+    model = ModelFcosPretrained.load_from_checkpoint(checkpoint_path)
     model.eval()
     return model
 

@@ -7,8 +7,22 @@ from PIL import Image
 from pathlib import Path
 import albumentations as A
 import csv
+import shutil
+from .utils import colors
+from dataclasses import dataclass
+from typing import Tuple, Optional
 
-BASE = Path(__file__).resolve().parent
+
+@dataclass
+class DatasetCreationConfig:
+    destination_folder: str = ""
+    background_folder: Optional[str] = None
+    num_generations: int = 10
+    num_figures: int = 3
+    augment: bool = False
+    random_color: bool = True
+    draw_bbox: bool = False
+    figure_size_range: Tuple[int, int] = (80, 200)
 
 
 class AmongUs:
@@ -23,11 +37,17 @@ class AmongUs:
         "M52 52c-7.18 0-13 5.82-13 13s5.82 13 13 13h31c7.18 0 13-5.82 13-13s-5.82-13-13-13H52Z",
     ]
 
-    def __init__(self, width=200, height=200, body_color="#ff0000", visor_colors=None):
+    def __init__(
+        self,
+        width=200,
+        height=200,
+        body_color="#ff0000",
+        visor_colors=["#ffffff", "#cccccc", "#999999"],
+    ):
         self.width = width
         self.height = height
         self.body_color = body_color
-        self.visor_colors = visor_colors or ["#ffffff", "#cccccc", "#999999"]
+        self.visor_colors = visor_colors
 
     def to_svg(self):
         svg_body = (
@@ -63,15 +83,42 @@ figure_augment = A.Compose(
             noise_scale_factor=1,
             p=0.5,
         ),
+        A.HorizontalFlip(p=0.5),
+        A.CropAndPad(percent=[-0.18, -0.1, -0.2, -0.1], keep_size=False, p=1.0),
     ],
     p=1.0,
 )
 
 
-def augment_figure_albumentations(image_bgr, image_alpha):
-    augmented = figure_augment(image=image_bgr)
-    image_bgr_aug = augmented["image"]
-    return image_bgr_aug, image_alpha
+def get_crop_and_pad(top, right, bottom, left):
+    def crop_mask(mask):
+        h, w = mask.shape[:2]
+        mask = mask.copy()
+        mask[: int(top * h), :] = 0
+        mask[h - int(bottom * h) :, :] = 0
+        mask[:, : int(w * left)] = 0
+        mask[:, w - int(w * right) :] = 0
+
+        return mask
+
+    return crop_mask
+
+
+def augment_figure_mask(image_bgr):
+    augmented = figure_augment(image=image_bgr[..., :3], mask=image_bgr[..., 3])
+    image_bgr_aug = np.concatenate(
+        (augmented["image"], augmented["mask"][..., None]), axis=-1
+    )
+    return image_bgr_aug
+
+
+def augment_mask_only(image_bgr):
+    augment_args = [random.uniform(0, 0.3) for _ in range(4)]
+    mask = get_crop_and_pad(*augment_args)(mask=image_bgr[..., 3])
+
+    image_bgr_aug = np.concatenate((image_bgr[..., :3], mask[..., None]), axis=-1)
+
+    return image_bgr_aug
 
 
 def random_background(width=800, height=600):
@@ -84,40 +131,42 @@ def svg_to_cv2_image(svg_instance, width, height):
         output_width=width,
         output_height=height,
     )
-    pil_image = Image.open(BytesIO(png_bytes)).convert("RGBA")
-    cv_image = np.array(pil_image)
-
-    bgr = cv_image[:, :, :3]
-    alpha = cv_image[:, :, 3] / 255.0
-
-    return bgr, alpha
+    return np.array(Image.open(BytesIO(png_bytes)).convert("RGBA"))
 
 
-def overlay_image(bg, fg_bgr, fg_alpha, x, y):
-    h, w = fg_bgr.shape[:2]
+def overlay_image(bg, fg_img, x, y):
+    bgr = fg_img[:, :, :3]
+    alpha = fg_img[:, :, 3] / 255.0
+    h, w = bgr.shape[:2]
     bg_h, bg_w = bg.shape[:2]
 
     if x + w > bg_w:
         w = bg_w - x
-        fg_bgr = fg_bgr[:, :w]
-        fg_alpha = fg_alpha[:, :w]
+        bgr = bgr[:, :w]
+        alpha = alpha[:, :w]
 
     if y - h < 0:
         h = y
-        fg_bgr = fg_bgr[-h:, :]
-        fg_alpha = fg_alpha[-h:, :]
+        bgr = bgr[-h:, :]
+        alpha = alpha[-h:, :]
 
     roi = bg[y - h : y, x : x + w]
 
     for c in range(3):
-        roi[:, :, c] = fg_alpha * fg_bgr[:, :, c] + (1 - fg_alpha) * roi[:, :, c]
+        roi[:, :, c] = alpha * bgr[:, :, c] + (1 - alpha) * roi[:, :, c]
 
     bg[y - h : y, x : x + w] = roi
     return bg
 
 
+def random_figure_color():
+    return random.choice(colors)
+
+
 def random_hex_color():
-    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+    return "#{:02x}{:02x}{:02x}".format(
+        random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
+    )
 
 
 def load_random_background(folder, width=800, height=600):
@@ -141,91 +190,84 @@ def load_random_background(folder, width=800, height=600):
 # ------------------------------------------------------------
 
 
-def generate(
-    destination_folder,
-    background_folder=None,
-    num_generations=10,
-    num_figures=3,
-    augment=False,
-    random_color=False,
-    draw_bbox=False,
-    figure_size_range=(80, 200),
-):
+def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
     """
     Generate images of Among Us characters with random sizes.
 
     figure_size_range: tuple (min_width, max_width). Height = width * 1.5
     Saves bounding boxes to a CSV file: filename,x_min,y_min,x_max,y_max
     """
-    generation_folder = BASE / destination_folder
-    (generation_folder / "images").mkdir(parents=True, exist_ok=True)
-    csv_file = generation_folder / "images.csv"
+    destination_folder = Path(config.destination_folder)
+    if destination_folder.exists():
+        shutil.rmtree(destination_folder)
+    (destination_folder / "images").mkdir(parents=True, exist_ok=True)
+    csv_file = destination_folder / "images.csv"
 
     with open(csv_file, "w", newline="") as f_csv:
         writer = csv.writer(f_csv)
-        writer.writerow(["filename", "x_min", "y_min", "x_max", "y_max"])  # CSV header
+        writer.writerow(
+            ["filename", "x_min", "y_min", "x_max", "y_max", "figure_color"]
+        )  # CSV header
 
-        for id in range(num_generations):
-            if background_folder:
-                bg = load_random_background(BASE / background_folder, 800, 600)
+        for id in range(config.num_generations):
+            if config.background_folder:
+                bg = load_random_background(config.background_folder, 800, 600)
             else:
                 bg = random_background(800, 600)
 
             bg_h, bg_w = bg.shape[:2]
             bboxes = []
 
-            for _ in range(num_figures):
-                width = random.randint(figure_size_range[0], figure_size_range[1])
+            for _ in range(config.num_figures):
+                width = random.randint(
+                    config.figure_size_range[0], config.figure_size_range[1]
+                )
                 height = int(width * 1.5)
 
-                body = random_hex_color() if random_color else "#ff0000"
-                visors = (
-                    [random_hex_color() for _ in range(3)]
-                    if random_color
-                    else ["#FFFFFF"] * 3
-                )
+                color_name, body = random_figure_color()
+                visors = [
+                    body,
+                    random_hex_color(),
+                    random_hex_color(),
+                ]  # first is body second is under arm third is eyes
                 among_us = AmongUs(
                     width=width, height=height, body_color=body, visor_colors=visors
                 )
 
-                fg_bgr, fg_alpha = svg_to_cv2_image(
-                    among_us, among_us.width, among_us.height
-                )
-
-                if random.random() < 0.5:
-                    fg_bgr = cv2.flip(fg_bgr, 1)
-                    fg_alpha = cv2.flip(fg_alpha, 1)
-
-                if augment:
-                    fg_bgr, fg_alpha = augment_figure_albumentations(fg_bgr, fg_alpha)
-
+                fg_img = svg_to_cv2_image(among_us, among_us.width, among_us.height)
+                if config.augment:
+                    fg_img = augment_figure_mask(fg_img)
+                    fg_img = augment_mask_only(fg_img)
+                    height, width = fg_img.shape[:2]
                 x = random.randint(0, bg_w - width)
                 y = random.randint(height, bg_h)
-
                 x_min, y_min = x, y - height
                 x_max, y_max = x + width, y
-                bboxes.append((x_min, y_min, x_max, y_max))
-
-                bg = overlay_image(bg, fg_bgr, fg_alpha, x, y)
-
-                if draw_bbox:
-                    cv2.rectangle(bg, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-
-            img_path = generation_folder / "images" / f"among_us_{id}.png"
+                bboxes.append((x_min, y_min, x_max, y_max, color_name))
+                bg = overlay_image(bg, fg_img, x, y)
+                if config.draw_bbox:
+                    bbox = bboxes[-1]
+                    cv2.rectangle(
+                        bg, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2
+                    )
+            img_path = destination_folder / "images" / f"among_us_{id}.png"
             cv2.imwrite(str(img_path), bg)
-
             for bbox in bboxes:
-                writer.writerow([img_path.name, bbox[0], bbox[1], bbox[2], bbox[3]])
+                writer.writerow(
+                    [img_path.name, bbox[0], bbox[1], bbox[2], bbox[3], bbox[4]]
+                )
 
 
 if __name__ == "__main__":
     generate(
-        "../data/image_train",
-        background_folder=None,
-        num_generations=100,
-        num_figures=5,
-        augment=True,
-        random_color=True,
-        draw_bbox=True,
-        figure_size_range=(80, 150),
+        DatasetCreationConfig(
+            "data/image_train",
+            background_folder=None,
+            num_generations=100,
+            num_figures=5,
+            augment=True,
+            random_color=True,
+            draw_bbox=True,
+            figure_size_range=(80, 150),
+        )
     )

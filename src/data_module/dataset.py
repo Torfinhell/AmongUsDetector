@@ -1,4 +1,3 @@
-import albumentations as A
 from torch.utils.data import Dataset
 from pathlib import Path
 import pandas as pd
@@ -6,14 +5,16 @@ from collections import defaultdict
 import PIL.Image
 import numpy as np
 import torch
+from .utils import color_to_ind
+import torchvision.transforms.v2 as v2
 
 
 class AmongUsImagesDataset(Dataset):
+
     def __init__(
         self,
         path_to_data,
-        augment=True,
-        transform=None,
+        transform,  # transform should not be None
         partition="train",
         train_split=0.8,
     ):
@@ -39,13 +40,14 @@ class AmongUsImagesDataset(Dataset):
         self.bboxes = defaultdict(
             list
         )  # path to array of bboxes [x_min, y_min, x_max, y_max]
-
+        self.labels = defaultdict(list)
         # Load bounding boxes from CSV
         csv_path = Path(path_to_data) / "images.csv"
         if csv_path.exists():
             images_info = pd.read_csv(csv_path)
             for _, row in images_info.iterrows():
                 self.bboxes[row.iloc[0]].append(list(row.iloc[1:5]))
+                self.labels[row.iloc[0]].append(color_to_ind[row.iloc[5]])
 
         # Split into train/val
         num_train = int(len(all_images) * train_split)
@@ -66,41 +68,23 @@ class AmongUsImagesDataset(Dataset):
         """
         image_path = self.images_paths[idx]
         bboxes = self.bboxes[image_path.name]
-
+        labels = self.labels[image_path.name]
         # Load image as RGB numpy array
         image = np.array(PIL.Image.open(image_path).convert("RGB"))
-
-        # Apply transform
         if self.transform is not None:
-            image, bboxes, class_labels = self.transform(image=image, bboxes=bboxes)
+            image, bboxes = self.transform(image=image, bboxes=bboxes)
         else:
-            # Minimal transform: just convert to tensor and normalize
-            from albumentations.pytorch import ToTensorV2
-
-            minimal_transform = A.Compose(
-                [
-                    A.Normalize(
-                        mean=[0.485, 0.456, 0.406],
-                        std=[0.229, 0.224, 0.225],
-                        max_pixel_value=255.0,
-                    ),
-                    ToTensorV2(),
-                ]
-            )
-            image = minimal_transform(image=image)["image"]
-            class_labels = [0] * len(bboxes)
+            image = v2.ToImage()(image)
+            image = v2.ToDtype(torch.float32, scale=True)(image)
 
         # Convert to FCOS format: dict with 'boxes' and 'labels'
         if len(bboxes) > 0:
             boxes = torch.as_tensor(bboxes, dtype=torch.float32)
-            labels = torch.as_tensor(class_labels, dtype=torch.int64)
+            labels = torch.as_tensor(labels, dtype=torch.int64)
         else:
-            # Handle empty image
             boxes = torch.zeros((0, 4), dtype=torch.float32)
             labels = torch.zeros((0,), dtype=torch.int64)
-
         target = {"boxes": boxes, "labels": labels}
-
         return image, target
 
     def __len__(self):

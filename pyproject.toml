@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "albumentations>=2.0.8",
     "cairosvg>=2.8.2",
+    "cyclopts>=4.4.1",
     "lightning>=2.6.0",
     "numpy>=2.3.5",
     "opencv-python>=4.11.0.86",

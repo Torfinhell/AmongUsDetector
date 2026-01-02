@@ -25,6 +25,7 @@
             "python": "${workspaceFolder}/.venv/bin/python",
             "console": "integratedTerminal",
             "args": [
+                "train_fcos"
             ],
             "env": {
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "30",

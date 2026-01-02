@@ -54,36 +54,15 @@ class MyModel(L.LightningModule):
 
     def _step(self, batch, kind):
         images, targets = batch
-
-        # Get device - use self.device which Lightning sets automatically
-        device = self.device
-
-        # Move images to device (they come as list from collate_fn)
-        images = [img.to(device) for img in images]
-
-        # Move targets to device
-        targets_list = []
-        for target in targets:
-            target_dict = {
-                "boxes": target["boxes"].to(device),
-                "labels": target["labels"].to(device),
-            }
-            targets_list.append(target_dict)
-
-        # Set model mode based on training/validation
         if kind == "train":
             self.model.train()
-            # FCOS model in training mode returns losses dict
-            loss_dict = self.model(images, targets_list)
-            # Sum key losses (bbox_regression and bbox_ctrness are the main FCOS losses)
-            loss = loss_dict["bbox_regression"] + loss_dict["bbox_ctrness"]
+            preds = self.model(images)
+            loss = self.criterion(preds, targets)
         else:
-            # In validation mode, also compute losses
-            self.model.train()  # Keep in train mode to get losses
+            self.model.eval()
             with torch.no_grad():
-                loss_dict = self.model(images, targets_list)
-                # Sum key losses
-                loss = loss_dict["bbox_regression"] + loss_dict["bbox_ctrness"]
+                preds = self.model(images)
+            loss = self.criterion(preds, targets)
 
         self.log(f"loss_{kind}", loss.item(), on_step=True, on_epoch=True)
         return loss

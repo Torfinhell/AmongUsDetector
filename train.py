@@ -1,88 +1,24 @@
 import lightning as L
-from torch.utils.data import DataLoader
-from src.datasets import AmongUsImagesDataset
-from scripts.generate import generate
-from dataclasses import dataclass
-from src.models import ModelFcos
-from src.transforms import FcosTransform
+from src.data_module import AmongUsDatamodule
+from src.models import ModelFcosPretrained
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
-import torch
+from src.configs import ModelConfig
+from cyclopts import App
+from src.utils import set_seed
 
-# Set float32 matmul precision for better GPU utilization
-torch.set_float32_matmul_precision("medium")
-
-
-def collate_fn(batch):
-    """
-    Custom collate function for DataLoader.
-    FCOS requires images as a list and targets as a list of dicts.
-    Handles variable-sized bounding boxes across batch.
-    """
-    images = [item[0] for item in batch]
-    targets = [item[1] for item in batch]
-    return images, targets
+app = App(name="Define Config for training:")
 
 
-@dataclass
-class ModelConfig:
-    batch_size: int
-    num_epochs: int
-    num_workers: int = 4
-    augment: bool = True
+@app.command
+def train_fcos(cfg: ModelConfig = ModelConfig()):
+    training_cfg = cfg.training_cfg
+    set_seed(training_cfg.seed)
 
-
-def train_fcos(cfg: ModelConfig):
-    # background_folder="background_images" #for later
-    generate(
-        "../data/image_train",
-        background_folder=None,
-        num_generations=1000,
-        num_figures=5,
-        augment=True,
-        random_color=True,
-        draw_bbox=True,
-        figure_size_range=(80, 150),
-    )
-    # Create training dataset
-    train_dataset = AmongUsImagesDataset(
-        path_to_data="data/image_train",
-        augment=cfg.augment,
-        transform=FcosTransform() if cfg.augment else None,
-        partition="train",
-        train_split=0.8,
-    )
-
-    # Create validation dataset (no augmentation for validation)
-    val_dataset = AmongUsImagesDataset(
-        path_to_data="data/image_train",
-        augment=False,
-        transform=(
-            FcosTransform(p=0.0) if cfg.augment else None
-        ),  # No augmentation, just resize/normalize
-        partition="val",
-        train_split=0.8,
-    )
-
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=cfg.batch_size,
-        num_workers=cfg.num_workers,
-        collate_fn=collate_fn,
-        shuffle=True,
-    )
-
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=cfg.batch_size,
-        num_workers=cfg.num_workers,
-        collate_fn=collate_fn,
-        shuffle=False,
-    )
-
+    # initialize Datamodule
+    data_module = AmongUsDatamodule(cfg.datamodule_cfg, cfg.creation_cfg)
     # Setup TensorBoard logger
     tb_logger = TensorBoardLogger(save_dir="logs", name="fcos_training", version=None)
-
     # Setup callbacks
     checkpoint_callback = ModelCheckpoint(
         monitor="loss_val",
@@ -94,29 +30,19 @@ def train_fcos(cfg: ModelConfig):
 
     trainer = L.Trainer(
         accelerator="gpu",
-        max_epochs=cfg.num_epochs,
+        max_epochs=training_cfg.num_epochs,
         logger=tb_logger,
         callbacks=[checkpoint_callback],
         log_every_n_steps=10,
-        gradient_clip_val=1.0,  # Clip gradients to prevent NaN
+        gradient_clip_val=1.0,
         enable_progress_bar=True,
+        limit_train_batches=training_cfg.train_epoch_len,
+        limit_val_batches=training_cfg.val_epoch_len,
     )
-    model = ModelFcos()
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-
+    model = ModelFcosPretrained(cfg.model_cfg)
+    trainer.fit(model=model, datamodule=data_module)
     return trainer, model
 
 
 if __name__ == "__main__":
-    cfg = ModelConfig(batch_size=8, num_epochs=10, num_workers=4, augment=True)
-    trainer, model = train_fcos(cfg)
-
-    # Print final epoch losses
-    print("\n" + "=" * 80)
-    print("TRAINING COMPLETE")
-    print("=" * 80)
-    print(f"Best checkpoint saved in: checkpoints/")
-    print(f"Logs saved in: logs/")
-    print(f"\nTo view training metrics:")
-    print(f"  tensorboard --logdir=logs")
-    print("=" * 80 + "\n")
+    app()

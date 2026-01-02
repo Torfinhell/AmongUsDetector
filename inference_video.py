@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from src.models.fcos import ModelFcos
+from models.fcos_pretrained import ModelFcosPretrained
 
 
 # -------------------------------
@@ -85,7 +85,7 @@ def load_checkpoint(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
 
     print(f"Loading checkpoint: {checkpoint_path}")
-    model = ModelFcos.load_from_checkpoint(checkpoint_path)
+    model = ModelFcosPretrained.load_from_checkpoint(checkpoint_path)
     model.eval()
     return model
 
