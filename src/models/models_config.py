@@ -4,7 +4,8 @@ from dataclasses import dataclass
 @dataclass
 class ModelFcosPretrainedConfig:
     num_classes: int = 18
-    learning_rate: float = 4e-3
+    heads_learning_rate: float = 4e-2
+    backbone_learning_rate: float = 1e-3
     step_size: int = 3
     weight_decay: float = 0.0005
     gamma: float = 0.98

@@ -1,7 +1,7 @@
 from torchmetrics import Metric
 import torch
 from src.metrics.metric_config import MetricConfig
-from .utils import iou_score
+from src.utils import iou_score
 
 
 class PRauc(Metric):
@@ -10,7 +10,7 @@ class PRauc(Metric):
         self.add_state("all_scores", default=torch.empty(0), dist_reduce_fx="cat")
         self.add_state("all_taken", default=torch.empty(0), dist_reduce_fx="cat")
         self.add_state("N_gt", default=torch.tensor(0), dist_reduce_fx="sum")
-        self.iou_thr = config.iou_thr
+        self.iou_thr = config.mAP_iou_thr
 
     def update(self, preds, targets):
         assert len(preds) == len(targets)

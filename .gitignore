@@ -212,3 +212,4 @@ checkpoints
 output
 scripts/among_us.svg
 logs
+.lr_find*

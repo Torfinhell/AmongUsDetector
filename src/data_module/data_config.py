@@ -20,4 +20,4 @@ class DatasetCreationConfig:
     random_color: bool = True
     draw_bbox: bool = False
     figure_size_range: Tuple[int, int] = (80, 200)
-    generate_every_epoch: bool = False
+    generate_every_epoch: Optional[int] = None

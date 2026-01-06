@@ -196,8 +196,9 @@ def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
         writer.writerow(
             ["filename", "x_min", "y_min", "x_max", "y_max", "figure_color"]
         )  # CSV header
-
-        for id in tqdm(range(config.num_generations), desc="Generating..."):
+        for id in tqdm(
+            range(config.num_generations), desc="Generating...", leave=False
+        ):
             if config.background_folder:
                 bg = load_random_background(config.background_folder, 800, 600)
             else:
@@ -206,7 +207,7 @@ def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
             bg_h, bg_w = bg.shape[:2]
             bboxes = []
 
-            for _ in range(config.num_figures):
+            for _ in range(random.randint(1, config.num_figures)):
                 width = random.randint(
                     config.figure_size_range[0], config.figure_size_range[1]
                 )
@@ -244,6 +245,7 @@ def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
                 writer.writerow(
                     [img_path.name, bbox[0], bbox[1], bbox[2], bbox[3], bbox[4]]
                 )
+        print("Generating Done")
 
 
 if __name__ == "__main__":

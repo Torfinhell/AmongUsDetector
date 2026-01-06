@@ -28,37 +28,12 @@ class AmongUsImagesDataset(Dataset):
             partition: 'train' or 'val' - which partition to use
             train_split: float between 0 and 1, percentage of data for training (default 0.8 = 80% train, 20% val)
         """
-        path_to_images = Path(path_to_data) / "images"
-        all_images = sorted(
-            [
-                path
-                for path in path_to_images.iterdir()
-                if path.suffix.lower() in [".jpg", ".png", ".jpeg"]
-            ]
-        )
-
-        self.bboxes = defaultdict(
-            list
-        )  # path to array of bboxes [x_min, y_min, x_max, y_max]
-        self.labels = defaultdict(list)
-        # Load bounding boxes from CSV
-        csv_path = Path(path_to_data) / "images.csv"
-        if csv_path.exists():
-            images_info = pd.read_csv(csv_path)
-            for _, row in images_info.iterrows():
-                self.bboxes[row.iloc[0]].append(list(row.iloc[1:5]))
-                self.labels[row.iloc[0]].append(color_to_ind[row.iloc[5]])
-
-        # Split into train/val
-        num_train = int(len(all_images) * train_split)
-        if partition == "train":
-            self.images_paths = all_images[:num_train]
-        elif partition == "val":
-            self.images_paths = all_images[num_train:]
-        else:
-            raise ValueError(f"partition must be 'train' or 'val', got {partition}")
-
+        self.path_to_images = Path(path_to_data) / "images"
+        self.partition = partition
+        self.train_split = train_split
         self.transform = transform
+        self.csv_path = Path(path_to_data) / "images.csv"
+        self.update_data()
 
     def __getitem__(self, idx):
         """
@@ -76,7 +51,6 @@ class AmongUsImagesDataset(Dataset):
         else:
             image = v2.ToImage()(image)
             image = v2.ToDtype(torch.float32, scale=True)(image)
-
         # Convert to FCOS format: dict with 'boxes' and 'labels'
         if len(bboxes) > 0:
             boxes = torch.as_tensor(bboxes, dtype=torch.float32)
@@ -89,3 +63,34 @@ class AmongUsImagesDataset(Dataset):
 
     def __len__(self):
         return len(self.images_paths)
+
+    def update_data(self):
+        all_images = sorted(
+            [
+                path
+                for path in self.path_to_images.iterdir()
+                if path.suffix.lower() in [".jpg", ".png", ".jpeg"]
+            ]
+        )
+
+        self.bboxes = defaultdict(
+            list
+        )  # path to array of bboxes [x_min, y_min, x_max, y_max]
+        self.labels = defaultdict(list)
+        # Load bounding boxes from CSV
+        if self.csv_path.exists():
+            images_info = pd.read_csv(self.csv_path)
+            for _, row in images_info.iterrows():
+                self.bboxes[row.iloc[0]].append(list(row.iloc[1:5]))
+                self.labels[row.iloc[0]].append(color_to_ind[row.iloc[5]])
+
+        # Split into train/val
+        num_train = int(len(all_images) * self.train_split)
+        if self.partition == "train":
+            self.images_paths = all_images[:num_train]
+        elif self.partition == "val":
+            self.images_paths = all_images[num_train:]
+        else:
+            raise ValueError(
+                f"partition must be 'train' or 'val', got {self.partition}"
+            )

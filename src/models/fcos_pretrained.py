@@ -15,6 +15,7 @@ class ModelFcosPretrained(MyModel):
     ):
         self.model_cfg = cfg.model_cfg
         super().__init__(cfg, **kwargs)
+        self.num_epochs = cfg.training_cfg.num_epochs
 
     def get_model(self):
         """
@@ -57,17 +58,24 @@ class ModelFcosPretrained(MyModel):
         Configure the optimizer and learning rate scheduler for FCOS training.
         Uses SGD optimizer with momentum, which is standard for object detection.
         """
-        # TODO Maybe other optimizer?
         optimizer = torch.optim.SGD(
-            self.model.parameters(),
-            lr=self.model_cfg.learning_rate,
+            [
+                {
+                    "params": self.model.backbone.parameters(),
+                    "lr": self.model_cfg.backbone_learning_rate,
+                },
+                {
+                    "params": self.model.head.parameters(),
+                    "lr": self.model_cfg.heads_learning_rate,
+                },
+            ],
             momentum=0.9,
-            weight_decay=self.model_cfg.weight_decay,  # TODO
+            weight_decay=self.model_cfg.weight_decay,
+            nesterov=True,
         )
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer,
-            step_size=self.model_cfg.step_size,
-            gamma=self.model_cfg.gamma,
+
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=self.num_epochs
         )
 
         return {
