@@ -1,19 +1,19 @@
 import os
-import torch
 import cv2
-import argparse
-from glob import glob
 from models.fcos_pretrained import ModelFcosPretrained
-from src.transforms.fcos_transform import FcosTransform
+from cyclopts import App
+from src.configs import ModelPredConfig
+from src.utils import set_seed
+from src.data_module import AmongUsDatamodule
+
+app = App(name="Define Config for inferencing:")
 
 
 def load_checkpoint(checkpoint_path):
     """Load checkpoint from the specified path"""
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
-
     print(f"Loading checkpoint: {checkpoint_path}")
-
     model = ModelFcosPretrained.load_from_checkpoint(checkpoint_path)
     model.eval()
     return model
@@ -106,7 +106,8 @@ def draw_boxes(image, boxes, scores, labels, confidence_threshold=0.5):
     return image_with_boxes
 
 
-def run_inference(image_dir, output_dir, checkpoint_path, confidence_threshold=0.5):
+@app.command
+def run_inference(cfg: ModelPredConfig):
     """
     Run inference on all images in a directory and save results with bounding boxes
 
@@ -116,160 +117,36 @@ def run_inference(image_dir, output_dir, checkpoint_path, confidence_threshold=0
         checkpoint_path: path to the model checkpoint file
         confidence_threshold: confidence threshold for drawing boxes
     """
-    # Create output directory
-    os.makedirs(output_dir, exist_ok=True)
+    training_cfg = cfg.training_cfg
+    set_seed(training_cfg.seed)
 
-    # Load model
-    model = load_checkpoint(checkpoint_path)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-
-    # Create transform
-    transform = FcosTransform(image_size=800, p=0.0)  # No augmentation for inference
-
-    # Get all image files
-    image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.bmp"]
-    image_files = []
-    for ext in image_extensions:
-        image_files.extend(glob(os.path.join(image_dir, ext)))
-        image_files.extend(glob(os.path.join(image_dir, ext.upper())))
-
-    image_files = sorted(set(image_files))  # Remove duplicates and sort
-
-    if not image_files:
-        print(f"No images found in {image_dir}")
-        return
-
-    print(f"Found {len(image_files)} images to process")
-    print(f"Processing images from: {image_dir}")
-    print(f"Saving results to: {output_dir}")
-
-    # Process each image
-    with torch.no_grad():
-        for i, image_path in enumerate(image_files):
-            try:
-                # Load original image
-                original_image = cv2.imread(image_path)
-                if original_image is None:
-                    print(f"Failed to load image: {image_path}")
-                    continue
-
-                original_size = original_image.shape[:2]  # (height, width)
-
-                # Prepare image for model (resize to 800x800 and normalize)
-                # Note: transform expects PIL or numpy image, let's use numpy directly
-                image_np = cv2.cvtColor(
-                    original_image, cv2.COLOR_BGR2RGB
-                )  # Convert BGR to RGB for processing
-
-                # Apply transform
-                try:
-                    # We need to apply transform manually since it expects bboxes
-                    # For inference, we don't have ground truth boxes, so we'll resize manually
-                    import albumentations as A
-
-                    transform_pipeline = A.Compose(
-                        [
-                            A.Resize(height=800, width=800),
-                            A.Normalize(
-                                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                            ),
-                        ],
-                        bbox_params=A.BboxParams(
-                            format="pascal_voc", min_area=0, min_visibility=0
-                        ),
-                    )
-
-                    # Apply transform without bboxes (we pass empty list)
-                    transformed = transform_pipeline(image=image_np, bboxes=[])
-                    image_transformed = transformed["image"]
-
-                    # Convert to tensor and add batch dimension
-                    image_tensor = (
-                        torch.from_numpy(image_transformed).permute(2, 0, 1).float()
-                    )
-                    image_tensor = image_tensor.unsqueeze(0)  # Add batch dimension
-
-                except Exception as e:
-                    print(f"Error transforming image {image_path}: {e}")
-                    continue
-
-                # Run inference
-                image_tensor = image_tensor.to(device)
-                predictions = model.model(
-                    [image_tensor.squeeze(0)]
-                )  # Remove batch dim for FCOS
-
-                # Extract predictions
-                boxes = predictions[0]["boxes"]  # (N, 4)
-                scores = predictions[0]["scores"]  # (N,)
-                labels = predictions[0]["labels"]  # (N,)
-
-                # Resize boxes back to original image size
-                boxes_original = resize_boxes(boxes, original_size, resized_size=800)
-
-                # Draw boxes on original image
-                image_with_boxes = draw_boxes(
-                    original_image,
-                    boxes_original,
-                    scores,
-                    labels,
-                    confidence_threshold=confidence_threshold,
-                )
-
-                # Save result
-                output_filename = os.path.basename(image_path)
-                output_path = os.path.join(output_dir, output_filename)
-                cv2.imwrite(output_path, image_with_boxes)
-
-                print(
-                    f"[{i+1}/{len(image_files)}] Processed: {image_path} -> {output_path}"
-                )
-                print(
-                    f"  Detections: {len(scores)} boxes, {sum(scores > confidence_threshold)} above threshold"
-                )
-
-            except Exception as e:
-                print(f"Error processing image {image_path}: {e}")
-                continue
-
-    print(f"\nInference complete! Results saved to {output_dir}")
+    # initialize Datamodule
+    data_module = AmongUsDatamodule(cfg.datamodule_cfg, cfg.creation_cfg)
+    # Setup TensorBoard logger
+    # Setup callbacks
+    checkpoint_callback = ModelCheckpoint(
+        monitor="loss_val",
+        mode="min",
+        save_top_k=3,
+        dirpath="checkpoints",
+        filename="fcos-{epoch:02d}-{loss_val:.4f}",
+    )
+    # Gradient Norm Output
+    trainer = L.Trainer(
+        accelerator="gpu",
+        max_epochs=training_cfg.num_epochs,
+        logger=tb_logger,
+        callbacks=[checkpoint_callback],
+        log_every_n_steps=10,
+        gradient_clip_val=6.0,
+        enable_progress_bar=True,
+        limit_train_batches=training_cfg.train_epoch_len,
+        limit_val_batches=training_cfg.val_epoch_len,
+    )
+    model = ModelFcosPretrained(cfg)
+    trainer.fit(model=model, datamodule=data_module)
+    return trainer, model
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run FCOS inference on images in a folder"
-    )
-    parser.add_argument(
-        "--input",
-        type=str,
-        default="data/image_train/images",
-        help="Path to input folder containing images (default: data/image_train/images)",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="output",
-        help="Path to output folder for results (default: output)",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=str,
-        required=True,
-        help="Path to model checkpoint file (required)",
-    )
-    parser.add_argument(
-        "--confidence",
-        type=float,
-        default=0.5,
-        help="Confidence threshold for drawing boxes (default: 0.5)",
-    )
-
-    args = parser.parse_args()
-
-    run_inference(
-        image_dir=args.input,
-        output_dir=args.output,
-        checkpoint_path=args.checkpoint,
-        confidence_threshold=args.confidence,
-    )
+    app()

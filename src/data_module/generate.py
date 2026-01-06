@@ -9,20 +9,8 @@ import albumentations as A
 import csv
 import shutil
 from .utils import colors
-from dataclasses import dataclass
-from typing import Tuple, Optional
-
-
-@dataclass
-class DatasetCreationConfig:
-    destination_folder: str = ""
-    background_folder: Optional[str] = None
-    num_generations: int = 10
-    num_figures: int = 3
-    augment: bool = False
-    random_color: bool = True
-    draw_bbox: bool = False
-    figure_size_range: Tuple[int, int] = (80, 200)
+from tqdm.auto import tqdm
+from .data_config import DatasetCreationConfig
 
 
 class AmongUs:
@@ -209,7 +197,7 @@ def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
             ["filename", "x_min", "y_min", "x_max", "y_max", "figure_color"]
         )  # CSV header
 
-        for id in range(config.num_generations):
+        for id in tqdm(range(config.num_generations), desc="Generating..."):
             if config.background_folder:
                 bg = load_random_background(config.background_folder, 800, 600)
             else:

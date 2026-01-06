@@ -3,16 +3,7 @@ from src.data_module.utils import collate_fn
 import lightning as L
 from torch.utils.data import DataLoader
 from src.data_module.generate import generate
-from dataclasses import dataclass
-from src.data_module.generate import DatasetCreationConfig
-
-
-@dataclass
-class DataModuleConfig:
-    generate_new: bool = True
-    train_split: float = 0.8
-    batch_size: int = 3
-    num_workers: int = 4
+from .data_config import DataModuleConfig, DatasetCreationConfig
 
 
 class AmongUsDatamodule(L.LightningDataModule):
@@ -27,20 +18,34 @@ class AmongUsDatamodule(L.LightningDataModule):
 
     def setup(self, stage):
         # TODO stage???
-        if self.datamodule_cfg.generate_new:
-            generate(self.creation_cfg)
-        self.train_dataset = AmongUsImagesDataset(
-            path_to_data=self.creation_cfg.destination_folder,
-            transform=None,  # TODO FCOS Transform
-            partition="train",
-            train_split=self.datamodule_cfg.train_split,
-        )
-        self.val_dataset = AmongUsImagesDataset(
-            path_to_data=self.creation_cfg.destination_folder,
-            transform=None,  # TODO FCOS Transform # No augmentation, just resize/normalize #TODO calculate mean and std?
-            partition="val",
-            train_split=self.datamodule_cfg.train_split,
-        )
+        if stage == "fit":
+            if self.datamodule_cfg.generate_new:
+                generate(self.creation_cfg)
+            self.train_dataset = AmongUsImagesDataset(
+                path_to_data=self.creation_cfg.destination_folder,
+                transform=None,  # TODO FCOS Transform
+                partition="train",
+                train_split=self.datamodule_cfg.train_split,
+            )
+            self.val_dataset = AmongUsImagesDataset(
+                path_to_data=self.creation_cfg.destination_folder,
+                transform=None,  # TODO FCOS Transform # No augmentation, just resize/normalize #TODO calculate mean and std?
+                partition="val",
+                train_split=self.datamodule_cfg.train_split,
+            )
+        if stage == "predict":
+            self.train_dataset = AmongUsImagesDataset(
+                path_to_data=self.creation_cfg.destination_folder,
+                transform=None,  # TODO FCOS Transform
+                partition="train",
+                train_split=self.datamodule_cfg.train_split,
+            )
+            self.val_dataset = AmongUsImagesDataset(
+                path_to_data=self.creation_cfg.destination_folder,
+                transform=None,  # TODO FCOS Transform # No augmentation, just resize/normalize #TODO calculate mean and std?
+                partition="val",
+                train_split=self.datamodule_cfg.train_split,
+            )
 
     def train_dataloader(self):
         return DataLoader(

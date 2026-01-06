@@ -20,11 +20,12 @@ class FcosTransform:
                 A.Resize(
                     height=image_size, width=image_size, interpolation=cv2.INTER_LINEAR
                 ),
-                A.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225],
-                    max_pixel_value=255.0,
-                ),
+                # A.Normalize(
+                #     mean=[0.485, 0.456, 0.406],
+                #     std=[0.229, 0.224, 0.225],
+                #     max_pixel_value=255.0,
+                # ),
+                # #TODO dont need normalization, maybe later
                 ToTensorV2(),
             ],
             bbox_params=A.BboxParams(

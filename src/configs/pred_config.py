@@ -2,25 +2,29 @@ from dataclasses import dataclass, field
 from src.data_module import DatasetCreationConfig, DataModuleConfig
 from src.models.models_config import ModelFcosPretrainedConfig
 from src.metrics import MetricConfig
+from typing import Optional
 
 
 @dataclass
-class TrainingConfig:
-    num_epochs: int
-    val_epoch_len: int
-    train_epoch_len: int
+class InferenceConfig:
     seed: int
-    logger_name: str = "fcos_test"
+    input_floder: str = ("data/image_train",)
+    output_floder: str = "data/output_image_train"
+    images_info: Optional[str] = None
+    confidence: float = 0.5  # Confidence threshold for drawing boxes from 0 to 1
+    checkpoint: str = "checkpoints/fcos-epoch=11-loss_val=0.7546.ckpt"
 
 
 @dataclass
-class ModelTrainConfig:
-    training_cfg: TrainingConfig = field(
-        default_factory=lambda: TrainingConfig(
-            num_epochs=300,
-            val_epoch_len=50,
-            train_epoch_len=500,
+class ModelPredConfig:
+    inference_cfg: InferenceConfig = field(
+        default_factory=lambda: InferenceConfig(
             seed=1,
+            confidence=0.5,
+            output_floder="data/output_image_train",
+            images_info=None,
+            confidence=0.5,
+            checkpoint="checkpoints/fcos-epoch=11-loss_val=0.7546.ckpt",
         )
     )
 

@@ -6,7 +6,7 @@ def fcos_loss_fn(predictions, targets):
     FCOS model returns a dictionary with losses when in training mode.
     This function extracts and sums the total loss.
     """
-    if isinstance(predictions, dict) and "loss_classifier" in predictions:
+    if isinstance(predictions, dict):
         # Model is in training mode and returns losses
         total_loss = sum(
             loss for loss in predictions.values() if isinstance(loss, torch.Tensor)
