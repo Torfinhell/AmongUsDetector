@@ -73,7 +73,6 @@ class ModelFcosPretrained(MyModel):
             weight_decay=self.model_cfg.weight_decay,
             nesterov=True,
         )
-
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=self.num_epochs
         )

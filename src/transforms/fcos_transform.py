@@ -3,7 +3,7 @@ from albumentations.pytorch import ToTensorV2
 import cv2
 
 
-class FcosTransform:
+class FcosTransform: #TODO Use it for my implementation of model later
     """
     Basic FCOS transform that resizes images to a consistent size and converts to tensor.
     FCOS works best with images resized to multiples of 32 for FPN alignment.

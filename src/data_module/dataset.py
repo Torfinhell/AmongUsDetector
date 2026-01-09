@@ -7,16 +7,14 @@ import numpy as np
 import torch
 from .utils import color_to_ind
 import torchvision.transforms.v2 as v2
-
+import os
 
 class AmongUsImagesDataset(Dataset):
 
     def __init__(
         self,
         path_to_data,
-        transform,  # transform should not be None
-        partition="train",
-        train_split=0.8,
+        transform=None,  # transform should not be None
     ):
         """
         Dataset for Among Us character detection with bounding boxes.
@@ -25,12 +23,9 @@ class AmongUsImagesDataset(Dataset):
             path_to_data: Path to data directory containing 'images' folder and 'images.csv'
             augment: Whether to apply augmentation (currently unused, use transform instead)
             transform: Transform to apply (e.g., FcosTransform instance)
-            partition: 'train' or 'val' - which partition to use
-            train_split: float between 0 and 1, percentage of data for training (default 0.8 = 80% train, 20% val)
         """
         self.path_to_images = Path(path_to_data) / "images"
-        self.partition = partition
-        self.train_split = train_split
+        assert os.path.exists(self.path_to_images), f"Path to {self.path_to_images} should exist to load images"
         self.transform = transform
         self.csv_path = Path(path_to_data) / "images.csv"
         self.update_data()
@@ -65,7 +60,7 @@ class AmongUsImagesDataset(Dataset):
         return len(self.images_paths)
 
     def update_data(self):
-        all_images = sorted(
+        self.images_paths = sorted(
             [
                 path
                 for path in self.path_to_images.iterdir()
@@ -83,14 +78,3 @@ class AmongUsImagesDataset(Dataset):
             for _, row in images_info.iterrows():
                 self.bboxes[row.iloc[0]].append(list(row.iloc[1:5]))
                 self.labels[row.iloc[0]].append(color_to_ind[row.iloc[5]])
-
-        # Split into train/val
-        num_train = int(len(all_images) * self.train_split)
-        if self.partition == "train":
-            self.images_paths = all_images[:num_train]
-        elif self.partition == "val":
-            self.images_paths = all_images[num_train:]
-        else:
-            raise ValueError(
-                f"partition must be 'train' or 'val', got {self.partition}"
-            )

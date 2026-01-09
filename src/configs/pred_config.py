@@ -1,8 +1,5 @@
 from dataclasses import dataclass, field
-from src.data_module import DatasetCreationConfig, DataModuleConfig
-from src.models.models_config import ModelFcosPretrainedConfig
-from src.metrics import MetricConfig
-from typing import Optional
+from src.configs.all_configs import ModelFcosPretrainedConfig, MetricConfig, DatasetCreationConfig, DataModuleConfig
 
 
 @dataclass
@@ -10,7 +7,6 @@ class InferenceConfig:
     seed: int
     input_floder: str = "data/image_train"
     output_floder: str = "data/output_image_train"
-    images_info: Optional[str] = None
     confidence: float = 0.5  # Confidence threshold for drawing boxes from 0 to 1
     checkpoint: str = "checkpoints/fcos-epoch=61-loss_val=0.7329.ckpt"
 
@@ -20,8 +16,8 @@ class ModelPredConfig:
     inference_cfg: InferenceConfig = field(
         default_factory=lambda: InferenceConfig(
             seed=1,
+            input_floder = "data/image_train",
             output_floder="data/output_image_train",
-            images_info=None,
             confidence=0.5,
             checkpoint="checkpoints/fcos-epoch=61-loss_val=0.7329.ckpt",
         )
@@ -48,9 +44,15 @@ class ModelPredConfig:
     datamodule_cfg: DataModuleConfig = field(
         default_factory=lambda: DataModuleConfig(
             generate_new=False,
-            train_split=0.8,
             batch_size=12,
             num_workers=4,
+            val_num_generations=None,
+            train_num_generations=None,
+            image_val_folder=None,
+            image_train_folder=None,
+            image_test_data=None,
+            image_pred_data="data/image_train/val",
+            generate_every_epoch=3,
         )
     )
     metric_cfg: MetricConfig = field(

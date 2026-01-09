@@ -1,6 +1,4 @@
 from lightning.pytorch.callbacks import LearningRateFinder
-
-
 class FineTuneLearningRateFinder(LearningRateFinder):
     def __init__(self, milestones, *args, **kwargs):
         super().__init__(*args, **kwargs)

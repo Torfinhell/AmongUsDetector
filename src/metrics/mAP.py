@@ -1,6 +1,6 @@
 from torchmetrics import Metric
 import torch
-from src.metrics.metric_config import MetricConfig
+from src.configs import MetricConfig
 from src.utils import iou_score
 
 

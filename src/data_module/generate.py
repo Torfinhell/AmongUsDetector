@@ -8,10 +8,11 @@ from pathlib import Path
 import albumentations as A
 import csv
 import shutil
-from .utils import colors
+from src.data_module.utils import colors
 from tqdm.auto import tqdm
-from .data_config import DatasetCreationConfig
-
+from src.configs import DatasetCreationConfig
+from cyclopts import App
+app=App(name="Generating dataset for training")
 
 class AmongUs:
     body_path = (
@@ -71,8 +72,8 @@ figure_augment = A.Compose(
             noise_scale_factor=1,
             p=0.5,
         ),
+        A.CropAndPad(percent=[-0.2, -0.14, -0.23, -0.12], keep_size=False, p=1.0),
         A.HorizontalFlip(p=0.5),
-        A.CropAndPad(percent=[-0.18, -0.1, -0.2, -0.1], keep_size=False, p=1.0),
     ],
     p=1.0,
 )
@@ -148,7 +149,9 @@ def overlay_image(bg, fg_img, x, y):
 
 
 def random_figure_color():
-    return random.choice(colors)
+    color_name, color = random.choice(colors)
+    color = "#" + "".join(reversed([color[i : i + 2] for i in range(0, 6, 2)]))
+    return color_name, color
 
 
 def random_hex_color():
@@ -177,8 +180,8 @@ def load_random_background(folder, width=800, height=600):
 # MAIN GENERATOR WITH BBOX
 # ------------------------------------------------------------
 
-
-def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
+@app.command
+def generate_data(config: DatasetCreationConfig):
     """
     Generate images of Among Us characters with random sizes.
 
@@ -224,10 +227,11 @@ def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
                 )
 
                 fg_img = svg_to_cv2_image(among_us, among_us.width, among_us.height)
-                if config.augment:
+                if config.augment_figure:
                     fg_img = augment_figure_mask(fg_img)
+                if config.augment_mask:
                     fg_img = augment_mask_only(fg_img)
-                    height, width = fg_img.shape[:2]
+                height, width = fg_img.shape[:2]
                 x = random.randint(0, bg_w - width)
                 y = random.randint(height, bg_h)
                 x_min, y_min = x, y - height
@@ -249,15 +253,15 @@ def generate(config: DatasetCreationConfig = DatasetCreationConfig()):
 
 
 if __name__ == "__main__":
-    generate(
-        DatasetCreationConfig(
-            "data/image_train",
-            background_folder=None,
-            num_generations=100,
-            num_figures=5,
-            augment=True,
-            random_color=True,
-            draw_bbox=True,
-            figure_size_range=(80, 150),
-        )
-    )
+    app()
+    # generate(
+    #     DatasetCreationConfig(
+    #         "data/image_train",
+    #         background_folder=None,
+    #         num_generations=100,
+    #         num_figures=5,
+    #         augment=True,
+    #         draw_bbox=True,
+    #         figure_size_range=(80, 150),
+    #     )
+    # )

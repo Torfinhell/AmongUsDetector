@@ -15,8 +15,6 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-
-
 # def load_checkpoint(checkpoint_path):
 #     """Load checkpoint from the specified path"""
 #     if not os.path.exists(checkpoint_path):

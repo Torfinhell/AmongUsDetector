@@ -1,10 +1,8 @@
 import torch
 import lightning as L
 from src.metrics import PRauc
-from src.data_module.generate import generate
 from src.configs import ModelTrainConfig
 from src.utils import nms, calculate_norm_grad
-
 
 class MyModel(L.LightningModule):
     def __init__(self, cfg: ModelTrainConfig, augment=False):
@@ -15,13 +13,11 @@ class MyModel(L.LightningModule):
         self.train_losses = []
         self.val_losses = []
         self.metrics_cfg = cfg.metric_cfg
-        self.create_cfg = cfg.creation_cfg
         self.mAP_score = PRauc(self.metrics_cfg)
         self.use_nms = cfg.model_cfg.use_nms
         self.nms_thr = cfg.model_cfg.nms_thr
         if self.use_nms:
             self.mAP_score_nms = PRauc(self.metrics_cfg)
-        self.generate_new = cfg.datamodule_cfg.generate_new
 
     def get_model(self):
         raise NotImplementedError(
@@ -54,7 +50,6 @@ class MyModel(L.LightningModule):
             print(
                 f"Epoch {self.current_epoch} - Train Loss: {self.train_losses[-1]:.6f}"
             )
-
     def on_after_backward(self):
         if self.metrics_cfg.log_grad_norm:
             self.log(
@@ -91,14 +86,6 @@ class MyModel(L.LightningModule):
             )
             print(f"Epoch {self.current_epoch} - mAP_nms: {mAP_score_nms}")
             self.mAP_score_nms.reset()
-        epoch_log = self.create_cfg.generate_every_epoch
-        if (
-            epoch_log is not None
-            and self.current_epoch % epoch_log == 0
-            and not (self.current_epoch == 0 and self.generate_new)
-        ):
-            generate(self.create_cfg)
-            self.trainer.train_dataloader.dataset.update_data()
 
     def _step(self, batch, kind):
         images, targets = batch
