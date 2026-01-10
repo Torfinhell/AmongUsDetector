@@ -3,8 +3,9 @@ from src.data_module.utils import collate_fn
 import lightning as L
 from torch.utils.data import DataLoader
 from src.data_module.generate import generate_data
-from src.configs import DataModuleConfig, DatasetCreationConfig
+from src.configs import DataModuleConfig, DatasetCreationConfig, TransformConfig
 from copy import deepcopy
+from src.transforms import FcosTransform
 
 
 class AmongUsDatamodule(L.LightningDataModule):
@@ -12,6 +13,7 @@ class AmongUsDatamodule(L.LightningDataModule):
         self,
         datamodule_cfg: DataModuleConfig,
         creation_cfg: DatasetCreationConfig,
+        transform_cfg:TransformConfig
     ):
         super().__init__()
         self.creation_cfg = deepcopy(creation_cfg)
@@ -23,33 +25,42 @@ class AmongUsDatamodule(L.LightningDataModule):
         self.train_generations = datamodule_cfg.train_num_generations
         self.val_generations = datamodule_cfg.val_num_generations
         self.test_data = datamodule_cfg.image_test_folder
+        self.predict_data=datamodule_cfg.image_pred_data
         self.generate_new = datamodule_cfg.generate_new
         self.generate_every_epoch = datamodule_cfg.generate_every_epoch
+        self.transform_cfg=transform_cfg
 
     def setup(self, stage):
+        if stage == "fit" and self.image_train_data is not None:
+            if self.generate_new and self.generate_every_epoch is None:
+                self.creation_cfg.destination_folder = self.image_train_data
+                self.creation_cfg.num_generations = self.train_generations
+                generate_data(self.creation_cfg)
+            self.train_dataset = AmongUsImagesDataset(
+                path_to_images=self.image_train_data+"/images",
+                path_to_csv=self.image_train_data+"/images.csv",
+                transform=FcosTransform(self.transform_cfg, part="train")
+                )
         if stage == "fit" and self.image_val_data is not None:
             if self.generate_new:
                 self.creation_cfg.destination_folder = self.image_val_data
                 self.creation_cfg.num_generations = self.val_generations
                 generate_data(self.creation_cfg)
             self.val_dataset = AmongUsImagesDataset(
-                path_to_data=self.image_val_data,
+                path_to_images=self.image_val_data+"/images",
+                path_to_csv=self.image_val_data+"/images.csv",
+                transform=FcosTransform(self.transform_cfg, part="val")
             )
-            if self.generate_new and self.generate_every_epoch is None:
-                self.creation_cfg.destination_folder = self.image_train_data
-                self.creation_cfg.num_generations = self.train_generations
-                generate_data(self.creation_cfg)
-                self.train_dataset = AmongUsImagesDataset(
-                    path_to_data=self.image_train_data,
-                )
         if stage == "test" and self.image_test_data is not None:
             self.test_dataset = AmongUsImagesDataset(
-                path_to_data=self.image_test_data,
+                path_to_images=self.image_test_data+"/images",
+                path_to_csv=self.image_test_data+"/images.csv",
+                transform=FcosTransform(self.transform_cfg, part="test")
             )
         if stage == "predict":
             self.pred_dataset = AmongUsImagesDataset(
-                path_to_data=self.creation_cfg.destination_folder,
-                transform=None,
+                path_to_data=self.predict_data,
+                transform=FcosTransform(self.transform_cfg, part="pred")
             )
 
     def train_dataloader(self):
@@ -62,7 +73,9 @@ class AmongUsDatamodule(L.LightningDataModule):
             self.creation_cfg.num_generations = self.train_generations
             generate_data(self.creation_cfg)
             self.train_dataset = AmongUsImagesDataset(
-                path_to_data=self.image_train_data,
+                path_to_images=self.image_train_data+"/images",
+                path_to_csv=self.image_train_data+"/images.csv",
+                transform=FcosTransform(self.transform_cfg, part="train")
             )
         return DataLoader(
             self.train_dataset,

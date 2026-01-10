@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
-from src.configs.all_configs import ModelFcosPretrainedConfig,DatasetCreationConfig, DataModuleConfig, MetricConfig
+from src.configs.all_configs import ModelFcosPretrainedConfig,DatasetCreationConfig, DataModuleConfig, MetricConfig, TransformConfig
 from typing import Optional
-from typing import Optional, Tuple
 
 @dataclass
 class TrainingConfig:
@@ -24,3 +23,4 @@ class ModelTrainConfig:
 
     datamodule_cfg: DataModuleConfig=field(default_factory=lambda: DataModuleConfig())
     metric_cfg: MetricConfig=field(default_factory=lambda: MetricConfig())
+    transform_cfg:TransformConfig=field(default_factory=lambda:TransformConfig())

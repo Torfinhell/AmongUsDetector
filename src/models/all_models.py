@@ -34,10 +34,14 @@ class MyModel(L.LightningModule):
         )
 
     def training_step(self, batch, batch_idx):
-        return self._step(batch, "train")
+        return self._step(batch, "train", batch_idx)
 
     def validation_step(self, batch, batch_idx):
-        return self._step(batch, "val")
+        return self._step(batch, "val", batch_idx)
+    def prediction_step(self, batch, batch_idx):
+        return self._step(batch, "pred", batch_idx)
+    def test_step(self, batch, batch_idx):
+        return self._step(batch, "test", batch_idx)
 
     def on_train_epoch_end(self):
         """Called at the end of each training epoch"""
@@ -86,16 +90,14 @@ class MyModel(L.LightningModule):
             print(f"Epoch {self.current_epoch} - mAP_nms: {mAP_score_nms}")
             self.mAP_score_nms.reset()
 
-    def _step(self, batch, kind):
+    def _step(self, batch, kind, batch_idx):
         images, targets = batch
-        self.model.train()
-        if kind == "train":
-            preds = self.model(images, targets)
-            loss = self.criterion(preds, targets)
-        else:
-            with torch.no_grad():
+        if(kind == "train" or kind=="val"):
+            self.model.train()
+            with torch.set_grad_enabled(kind == "train"):
                 preds = self.model(images, targets)
-            loss = self.criterion(preds, targets)
+                loss = self.criterion(preds, targets)
+        if kind=="val" or kind=="test":
             self.model.eval()
             with torch.no_grad():
                 preds = self.model(images, targets)
@@ -103,5 +105,11 @@ class MyModel(L.LightningModule):
             if self.use_nms:
                 preds = nms(preds, iou_thr=self.nms_thr)
                 self.mAP_score_nms.update(preds, targets)
+        if kind=="pred":
+            self.model.eval()
+            with torch.no_grad():
+                preds = self.model(images, targets)
+            return preds
+            #TODO Reshape back the points and log images using batch_idx
         self.log(f"loss_{kind}", loss.item(), on_step=True, on_epoch=True)
         return loss

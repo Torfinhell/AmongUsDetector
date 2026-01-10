@@ -25,22 +25,9 @@ def run_inference(cfg: ModelPredConfig):
 
     # initialize Datamodule
     data_module = AmongUsDatamodule(cfg.datamodule_cfg, cfg.creation_cfg)
-    # Setup TensorBoard logger
-    # Setup callbacks
-    checkpoint_callback = ModelCheckpoint(
-        monitor="loss_val",
-        mode="min",
-        save_top_k=3,
-        dirpath="checkpoints",
-        filename="fcos-{epoch:02d}-{loss_val:.4f}",
-    )
     # Gradient Norm Output
     trainer = L.Trainer(
         accelerator="gpu",
-        logger=None,
-        callbacks=[checkpoint_callback],
-        log_every_n_steps=10,
-        gradient_clip_val=6.0,
         enable_progress_bar=True,
     )
     model = ModelFcosPretrained(cfg)

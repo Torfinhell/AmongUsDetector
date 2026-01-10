@@ -5,14 +5,14 @@ from typing import Optional, Tuple, Annotated
 @dataclass
 class ModelFcosPretrainedConfig:
     num_classes:int=18
-    heads_learning_rate:float=8e-3
-    backbone_learning_rate:float=8e-3
+    heads_learning_rate:Annotated[Optional[float], Parameter(name="head_lr")]=8e-3
+    backbone_learning_rate:Annotated[Optional[float], Parameter(name="backbone_lr")]=8e-3
     step_size:int=3
-    weight_decay:float=0.0005  # TODO
+    weight_decay:float=0.0005  
     gamma:float=0.98
     num_anchors:int=1
     head_in_channels:int=256
-    min_size:int=600 #TODO
+    min_size:int=500 
     max_size:int=800
     use_nms:bool=False
     nms_thr:float=0.8
@@ -20,24 +20,27 @@ class ModelFcosPretrainedConfig:
     backbone_layers:int=5
     detections_per_img:int=100
     topk_candidates:int=1000
+    is_pretrained:Annotated[Optional[bool], Parameter(name="is_pretrained")]=True
 
 @dataclass
 class MetricConfig:
     mAP_iou_thr: float = 0.9  
-    log_grad_norm: bool = True
+    log_grad_norm: Optional[bool] = True
+    log_image_folder:str="data/image_log"
+    log_image_num_step:Annotated[Optional[int],Parameter(name="--log_image_num_step")]=100
 
 @dataclass
 class DataModuleConfig:
-    generate_new:bool=True
+    generate_new:Annotated[Optional[bool],Parameter(name="--generate_new")]=True
+    generate_every_epoch:Annotated[Optional[int],Parameter(name="--generate_every_epoch")]=6
     batch_size:Annotated[int, Parameter(name="--batch_size")]=12
-    num_workers:int=4
+    num_workers:Annotated[int, Parameter(name="--num_workers")]=4
     val_num_generations:Annotated[int, Parameter(name="--val_num_gen")]=1000
     train_num_generations:Annotated[int, Parameter(name="--train_num_gen")]=4000
     image_val_folder:Annotated[Optional[str], Parameter(name="--val_folder")]=None
     image_train_folder:Annotated[Optional[str], Parameter(name="--train_folder")]=None
     image_test_folder:Annotated[Optional[str], Parameter(name="--test_folder")]=None
     image_pred_data:Annotated[Optional[str],Parameter(name="--pred_data")]=None
-    generate_every_epoch:Annotated[Optional[int],Parameter(name="--pred_data")]=3
 
 
 @dataclass
@@ -50,4 +53,10 @@ class DatasetCreationConfig:
     augment_mask: Annotated[bool,Parameter(name="--augmet_mask")]  = True
     draw_bbox: Annotated[bool, Parameter(name="--draw_bbox")] = False
     figure_size_range: Tuple[int, int] = (40, 200)
+
+@dataclass
+class TransformConfig:
+    normalize:bool=False
+    height_range:Tuple[int, int]=(500, 700) #should be multiples of 32
+    width_range:Tuple[int, int]=(600,800)
 

@@ -2,6 +2,7 @@ import lightning as L
 from src.data_module import AmongUsDatamodule
 from src.models import ModelFcosPretrained
 from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch  import seed_everything
 from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     GradientAccumulationScheduler,
@@ -10,7 +11,7 @@ from lightning.pytorch.callbacks import (
 )
 from src.configs import ModelTrainConfig
 from cyclopts import App
-from src.utils import set_seed, FineTuneLearningRateFinder
+from src.utils import  FineTuneLearningRateFinder
 
 app = App(name="Define Config for training:")
 
@@ -18,10 +19,10 @@ app = App(name="Define Config for training:")
 @app.command
 def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
     training_cfg = cfg.training_cfg
-    set_seed(training_cfg.seed)
+    seed_everything(training_cfg.seed)
 
     # initialize Datamodule
-    data_module = AmongUsDatamodule(cfg.datamodule_cfg, cfg.creation_cfg)
+    data_module = AmongUsDatamodule(cfg.datamodule_cfg, cfg.creation_cfg, cfg.transform_cfg)
     # Setup TensorBoard logger
 
     tb_logger = TensorBoardLogger(

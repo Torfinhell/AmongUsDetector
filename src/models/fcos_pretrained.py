@@ -22,7 +22,7 @@ class ModelFcosPretrained(MyModel):
         Returns a FCOS ResNet50 FPN model with pretrained backbone for custom number of classes.
         """
         model = fcos_resnet50_fpn(
-            weights="DEFAULT",
+            weights="DEFAULT" if self.model_cfg.is_pretrained else None,
             nms_thresh=self.model_cfg.nms_thr,
             score_thresh=self.model_cfg.score_thresh,
             trainable_backbone_layers=self.model_cfg.backbone_layers,
@@ -40,8 +40,6 @@ class ModelFcosPretrained(MyModel):
         )
         model.transform.min_size = (self.model_cfg.min_size,)
         model.transform.max_size = self.model_cfg.max_size
-        # for param in model.parameters():
-        #     param.requires_grad = True
         return model
 
     def get_criterion(self):
