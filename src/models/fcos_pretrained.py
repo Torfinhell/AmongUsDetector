@@ -10,12 +10,11 @@ from src.configs import ModelTrainConfig
 class ModelFcosPretrained(MyModel):
     def __init__(
         self,
-        cfg: ModelTrainConfig = ModelTrainConfig(),
-        **kwargs,
+        cfg: ModelTrainConfig
     ):
         self.model_cfg = cfg.model_cfg
-        super().__init__(cfg, **kwargs)
         self.num_epochs = cfg.training_cfg.num_epochs
+        super().__init__(cfg)
 
     def get_model(self):
         """

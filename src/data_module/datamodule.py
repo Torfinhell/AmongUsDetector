@@ -39,9 +39,9 @@ class AmongUsDatamodule(L.LightningDataModule):
                 self.creation_cfg.destination_folder = self.image_train_data
                 self.creation_cfg.num_generations = self.train_generations
                 generate_data(self.creation_cfg)
-            self.train_dataset = AmongUsImagesDataset(
-                path_to_data=self.image_train_data,
-            )
+                self.train_dataset = AmongUsImagesDataset(
+                    path_to_data=self.image_train_data,
+                )
         if stage == "test" and self.image_test_data is not None:
             self.test_dataset = AmongUsImagesDataset(
                 path_to_data=self.image_test_data,

@@ -5,10 +5,10 @@ from typing import Optional, Tuple, Annotated
 @dataclass
 class ModelFcosPretrainedConfig:
     num_classes:int=18
-    heads_learning_rate:float=5e-3
-    backbone_learning_rate:float=5e-3
+    heads_learning_rate:float=8e-3
+    backbone_learning_rate:float=8e-3
     step_size:int=3
-    weight_decay:float=0.001  # TODO
+    weight_decay:float=0.0005  # TODO
     gamma:float=0.98
     num_anchors:int=1
     head_in_channels:int=256
@@ -23,7 +23,7 @@ class ModelFcosPretrainedConfig:
 
 @dataclass
 class MetricConfig:
-    mAP_iou_thr: float = 0.9  # for mAP
+    mAP_iou_thr: float = 0.9  
     log_grad_norm: bool = True
 
 @dataclass
@@ -37,7 +37,7 @@ class DataModuleConfig:
     image_train_folder:Annotated[Optional[str], Parameter(name="--train_folder")]=None
     image_test_folder:Annotated[Optional[str], Parameter(name="--test_folder")]=None
     image_pred_data:Annotated[Optional[str],Parameter(name="--pred_data")]=None
-    generate_every_epoch:int=3
+    generate_every_epoch:Annotated[Optional[int],Parameter(name="--pred_data")]=3
 
 
 @dataclass

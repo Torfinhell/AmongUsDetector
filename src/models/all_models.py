@@ -5,11 +5,10 @@ from src.configs import ModelTrainConfig
 from src.utils import nms, calculate_norm_grad
 
 class MyModel(L.LightningModule):
-    def __init__(self, cfg: ModelTrainConfig, augment=False):
+    def __init__(self, cfg: ModelTrainConfig):
         super().__init__()
         self.model = self.get_model()
         self.criterion = self.get_criterion()
-        self.augment = augment
         self.train_losses = []
         self.val_losses = []
         self.metrics_cfg = cfg.metric_cfg

@@ -190,7 +190,10 @@ def generate_data(config: DatasetCreationConfig):
     """
     destination_folder = Path(config.destination_folder)
     if destination_folder.exists():
-        shutil.rmtree(destination_folder)
+        for jpg in destination_folder.rglob("*.jpg"):
+            jpg.unlink()
+        for csv_file in destination_folder.rglob("*.csv"):
+            csv_file.unlink()
     (destination_folder / "images").mkdir(parents=True, exist_ok=True)
     csv_file = destination_folder / "images.csv"
 
