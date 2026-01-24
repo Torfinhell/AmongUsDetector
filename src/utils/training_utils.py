@@ -1,4 +1,13 @@
 from lightning.pytorch.callbacks import LearningRateFinder
+import lightning as pl
+class TestEveryNEpochs(pl.Callback):
+    def __init__(self, n_epochs=5):
+        self.n_epochs = n_epochs
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        if (trainer.current_epoch + 1) % self.n_epochs == 0:
+            print(f"Running test at epoch {trainer.current_epoch+1}")
+            trainer.test(pl_module, datamodule=trainer.datamodule)
 class FineTuneLearningRateFinder(LearningRateFinder):
     def __init__(self, milestones, *args, **kwargs):
         super().__init__(*args, **kwargs)

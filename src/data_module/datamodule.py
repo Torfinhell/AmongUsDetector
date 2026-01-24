@@ -7,7 +7,6 @@ from src.configs import DataModuleConfig, DatasetCreationConfig, TransformConfig
 from copy import deepcopy
 from src.transforms import FcosTransform
 
-
 class AmongUsDatamodule(L.LightningDataModule):
     def __init__(
         self,
@@ -27,12 +26,12 @@ class AmongUsDatamodule(L.LightningDataModule):
         self.test_data = datamodule_cfg.image_test_folder
         self.predict_data=datamodule_cfg.image_pred_data
         self.generate_new = datamodule_cfg.generate_new
-        self.generate_every_epoch = datamodule_cfg.generate_every_epoch
         self.transform_cfg=transform_cfg
+        self.generate_every_epoch=datamodule_cfg.generate_every_epoch
 
     def setup(self, stage):
-        if stage == "fit" and self.image_train_data is not None:
-            if self.generate_new and self.generate_every_epoch is None:
+        if stage == "fit" and self.image_train_data is not None and not self.generate_every_epoch:
+            if self.generate_new:
                 self.creation_cfg.destination_folder = self.image_train_data
                 self.creation_cfg.num_generations = self.train_generations
                 generate_data(self.creation_cfg)
@@ -41,7 +40,7 @@ class AmongUsDatamodule(L.LightningDataModule):
                 path_to_csv=self.image_train_data+"/images.csv",
                 transform=FcosTransform(self.transform_cfg, part="train")
                 )
-        if stage == "fit" and self.image_val_data is not None:
+        if stage == "fit" and self.image_val_data is not None :
             if self.generate_new:
                 self.creation_cfg.destination_folder = self.image_val_data
                 self.creation_cfg.num_generations = self.val_generations
@@ -51,7 +50,7 @@ class AmongUsDatamodule(L.LightningDataModule):
                 path_to_csv=self.image_val_data+"/images.csv",
                 transform=FcosTransform(self.transform_cfg, part="val")
             )
-        if stage == "test" and self.image_test_data is not None:
+        if stage == "test" and self.image_test_data is not None :
             self.test_dataset = AmongUsImagesDataset(
                 path_to_images=self.image_test_data+"/images",
                 path_to_csv=self.image_test_data+"/images.csv",
@@ -59,15 +58,13 @@ class AmongUsDatamodule(L.LightningDataModule):
             )
         if stage == "predict":
             self.pred_dataset = AmongUsImagesDataset(
-                path_to_data=self.predict_data,
+                path_to_images=self.predict_data,
                 transform=FcosTransform(self.transform_cfg, part="pred")
             )
 
     def train_dataloader(self):
         if (
-            self.generate_new
-            and self.generate_every_epoch is not None
-            and self.trainer.current_epoch % self.generate_every_epoch == 0
+            self.generate_new and self.generate_every_epoch and self.image_train_data is not None
         ):
             self.creation_cfg.destination_folder = self.image_train_data
             self.creation_cfg.num_generations = self.train_generations
@@ -93,5 +90,19 @@ class AmongUsDatamodule(L.LightningDataModule):
             collate_fn=collate_fn,
             shuffle=False,
         )
-
-    # TODO Pred Dataloader?
+    def predict_dataloader(self):
+        return DataLoader(
+            self.pred_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            collate_fn=collate_fn,
+            shuffle=False,
+        )
+    def test_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            collate_fn=collate_fn,
+            shuffle=False,
+        )

@@ -8,13 +8,13 @@ import torch
 from .utils import color_to_ind
 import torchvision.transforms.v2 as v2
 import os
-
+from torch import nn
 class AmongUsImagesDataset(Dataset):
 
     def __init__(
         self,
         path_to_images,
-        path_to_csv,
+        path_to_csv=None,
         transform=None,  # transform should not be None
     ):
         """
@@ -41,12 +41,13 @@ class AmongUsImagesDataset(Dataset):
         )  # path to array of bboxes [x_min, y_min, x_max, y_max]
         self.labels = defaultdict(list)
         # Load bounding boxes from CSV
-        csv_path = Path(path_to_csv)
-        if csv_path.exists():
-            images_info = pd.read_csv(csv_path)
-            for _, row in images_info.iterrows():
-                self.bboxes[row.iloc[0]].append(list(row.iloc[1:5]))
-                self.labels[row.iloc[0]].append(color_to_ind[row.iloc[5]])
+        if path_to_csv is not None:
+            csv_path = Path(path_to_csv)
+            if csv_path.exists():
+                images_info = pd.read_csv(csv_path)
+                for _, row in images_info.iterrows():
+                    self.bboxes[row.iloc[0]].append(list(row.iloc[1:5]))
+                    self.labels[row.iloc[0]].append(color_to_ind[row.iloc[5]])
 
 
 
@@ -61,16 +62,12 @@ class AmongUsImagesDataset(Dataset):
         labels = self.labels[image_path.name]
         # Load image as RGB numpy array
         image = np.array(PIL.Image.open(image_path).convert("RGB"))
-        if len(bboxes) == 0:
-            if self.transform is not None:
-                transformed = self.transform(image=image, bboxes=[])
-                image = transformed[0]
-            else:
-                image = v2.ToImage()(image)
-                image = v2.ToDtype(torch.float32, scale=True)(image)
+        if self.transform is not None:
+            transformed = self.transform(image=image, bboxes=bboxes)
+            image, bboxes = transformed
         else:
-            if self.transform is not None:
-                image, bboxes = self.transform(image=image, bboxes=bboxes)
+            image = v2.ToImage()(image)
+            image = v2.ToDtype(torch.float32, scale=True)(image)
         # Convert to FCOS format: dict with 'boxes' and 'labels'
         if len(bboxes) > 0:
             boxes = torch.as_tensor(bboxes, dtype=torch.float32)
@@ -78,9 +75,10 @@ class AmongUsImagesDataset(Dataset):
         else:
             boxes = torch.zeros((0, 4), dtype=torch.float32)
             labels = torch.zeros((0,), dtype=torch.int64)
-        target = {"boxes": boxes, "labels": labels}
-        return image, target
+        return {"image":image, "boxes": boxes, "labels": labels, "image_path":image_path}
 
     def __len__(self):
         return len(self.images_paths)
+    def show_dataset(num_images:int, model:nn.Module):
+        pass
 

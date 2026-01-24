@@ -189,11 +189,12 @@ def generate_data(config: DatasetCreationConfig):
     Saves bounding boxes to a CSV file: filename,x_min,y_min,x_max,y_max
     """
     destination_folder = Path(config.destination_folder)
-    if destination_folder.exists():
-        for jpg in destination_folder.rglob("*.jpg"):
-            jpg.unlink()
-        for csv_file in destination_folder.rglob("*.csv"):
-            csv_file.unlink()
+    if (destination_folder/"images").exists():
+        image_exts = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp", ".csv"}
+        images_dir = destination_folder / "images"
+        for p in images_dir.rglob("*"):
+            if p.suffix.lower() in image_exts:
+                p.unlink()
     (destination_folder / "images").mkdir(parents=True, exist_ok=True)
     csv_file = destination_folder / "images.csv"
 
@@ -206,9 +207,9 @@ def generate_data(config: DatasetCreationConfig):
             range(config.num_generations), desc="Generating...", leave=False
         ):
             if config.background_folder:
-                bg = load_random_background(config.background_folder, 800, 600)
+                bg = load_random_background(config.background_folder, *config.bg_shape)
             else:
-                bg = random_background(800, 600)
+                bg = random_background(*config.bg_shape)
 
             bg_h, bg_w = bg.shape[:2]
             bboxes = []

@@ -9,9 +9,10 @@ from lightning.pytorch.callbacks import (
     LearningRateMonitor,
     StochasticWeightAveraging,
 )
+from src.utils import TestEveryNEpochs
 from src.configs import ModelTrainConfig
 from cyclopts import App
-from src.utils import  FineTuneLearningRateFinder
+import torch
 
 app = App(name="Define Config for training:")
 
@@ -20,6 +21,7 @@ app = App(name="Define Config for training:")
 def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
     training_cfg = cfg.training_cfg
     seed_everything(training_cfg.seed)
+    torch.set_float32_matmul_precision("high")
 
     # initialize Datamodule
     data_module = AmongUsDatamodule(cfg.datamodule_cfg, cfg.creation_cfg, cfg.transform_cfg)
@@ -30,7 +32,7 @@ def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
     )
     # Setup callbacks
     checkpoint_callback = ModelCheckpoint(
-        monitor="mAP_score",
+        monitor="mAP_score_val",
         mode="max",
         save_top_k=3,
         dirpath="checkpoints",
@@ -48,21 +50,21 @@ def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
         annealing_epochs=10,
         annealing_strategy="cos",
     )
-    # Gradient Norm Output
+    test_every_n_epoch=TestEveryNEpochs(1)
     trainer = L.Trainer(
         accelerator="gpu",
         max_epochs=training_cfg.num_epochs,
         logger=tb_logger,
-        callbacks=[checkpoint_callback, lr_monitor, swa, grad_acum],
+        callbacks=[checkpoint_callback, lr_monitor, swa, grad_acum, test_every_n_epoch],
         log_every_n_steps=10,
         gradient_clip_val=6.0,
         enable_progress_bar=True,
         limit_train_batches=training_cfg.train_epoch_len,
         limit_val_batches=training_cfg.val_epoch_len,
+        reload_dataloaders_every_n_epochs=cfg.datamodule_cfg.generate_every_epoch
     )
     model = ModelFcosPretrained(cfg)
     trainer.fit(model=model, datamodule=data_module)
-    return trainer, model
 
 
 if __name__ == "__main__":

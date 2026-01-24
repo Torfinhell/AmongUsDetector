@@ -208,9 +208,11 @@ __marimo__/
 data
 uv.lock
 background_images
-checkpoints
+checkpoints*
+*.txt
 output
 scripts/among_us.svg
 logs
 .lr_find*
 .vscode
+lightning_logs

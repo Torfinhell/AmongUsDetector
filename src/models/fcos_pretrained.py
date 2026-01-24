@@ -13,7 +13,8 @@ class ModelFcosPretrained(MyModel):
         cfg: ModelTrainConfig
     ):
         self.model_cfg = cfg.model_cfg
-        self.num_epochs = cfg.training_cfg.num_epochs
+        if(getattr(cfg, "training_cfg", None) is not None):
+            self.num_epochs = cfg.training_cfg.num_epochs
         super().__init__(cfg)
 
     def get_model(self):

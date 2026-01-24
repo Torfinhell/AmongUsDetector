@@ -14,20 +14,15 @@ class FcosTransform:
             image_size: Target image size (will be resized to image_size x image_size)
         """
         self.normalize=transform_cfg.normalize
-        self.height_range=transform_cfg.height_range
-        self.width_range=transform_cfg.width_range
         self.part=part
-        if(part!="train"):
-            self.update_transform(sum(self.height_range)/2, sum(self.width_range)/2)
-    def update_transform(self, new_height, new_width):
         normalize_trans=A.Normalize(
                     mean=[0.485, 0.456, 0.406],
                     std=[0.229, 0.224, 0.225],
                     max_pixel_value=255.0,
-                ) if self.normalize else A.Normalize(mean=(0,0,0), std=(1,1,1), max_pixel_value=255.0) 
+                ) if self.normalize  else A.Normalize(mean=(0,0,0), std=(1,1,1), max_pixel_value=255.0) 
         self.transform = A.Compose(
             [
-                A.Resize(new_height, new_width), #TODO maybe change later to A.RandomResizeCrop()
+                A.Resize(transform_cfg.height, transform_cfg.width), #TODO maybe change later to A.RandomResizeCrop()
                 normalize_trans,
                 ToTensorV2(),
             ],
@@ -37,6 +32,7 @@ class FcosTransform:
                 min_visibility=0,
             ),
         )
+       
 
     def __call__(self, image, bboxes):
         """
@@ -50,8 +46,6 @@ class FcosTransform:
             bboxes: list of normalized bounding boxes
             class_labels: list of class labels
         """
-        if(self.part=="train"):
-            self.update_transform(random.randrange(*self.height_range), random.randrange(*self.width_range))
         # If no bboxes, skip albumentations (it can't handle empty bboxes)
         if len(bboxes) == 0:
             transformed = self.transform(image=image)
