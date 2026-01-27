@@ -230,8 +230,8 @@ def generate_data(config: DatasetCreationConfig):
                 fg_img = svg_to_cv2_image(among_us, among_us.width, among_us.height)
                 if config.augment_figure:
                     fg_img = augment_figure_mask(fg_img)
-                # if config.augment_mask:
-                #     fg_img = augment_mask_only(fg_img)
+                if config.augment_mask:
+                    fg_img = augment_mask_only(fg_img)
                 height, width = fg_img.shape[:2]
                 x = random.randint(0, bg_w - width)
                 y = random.randint(height, bg_h)
