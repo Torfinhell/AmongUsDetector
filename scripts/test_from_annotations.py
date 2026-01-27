@@ -10,7 +10,7 @@ app=App(name="Define Config create data from annotations")
 def create_from_xml(annotations_dir:str, image_dir:str, output_folder:str):
     output_folder=Path(output_folder)
     (output_folder / "images").mkdir(exist_ok=True)
-
+    image_dir=Path(image_dir)
     rows = []
     widths=[]
     heights=[]

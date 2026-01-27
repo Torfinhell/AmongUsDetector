@@ -51,7 +51,7 @@ class DatasetCreationConfig:
     num_generations: Annotated[Optional[int], Parameter(name="--num_generation")] = None
     num_figures: Annotated[int, Parameter(name="--num_figures")] = 20
     augment_figure: Annotated[bool,Parameter(name="--augment_figure")]  = True
-    augment_mask: Annotated[bool,Parameter(name="--augmet_mask")]  = True
+    augment_mask: Annotated[bool,Parameter(name="--augment_mask")]  = True
     draw_bbox: Annotated[bool, Parameter(name="--draw_bbox")] = False
     bg_shape:Annotated[Tuple[int, int], Parameter(name="--bg_shape")]=(640, 360) #width, height
     width_mean_std:Tuple[float, float]=(41.0,17.75)#for figure
