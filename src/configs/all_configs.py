@@ -53,12 +53,14 @@ class DatasetCreationConfig:
     augment_figure: Annotated[bool,Parameter(name="--augment_figure")]  = True
     augment_mask: Annotated[bool,Parameter(name="--augmet_mask")]  = True
     draw_bbox: Annotated[bool, Parameter(name="--draw_bbox")] = False
-    figure_size_range: Tuple[int, int] = (40, 200)
-    bg_shape:Annotated[Tuple[int, int], Parameter(name="--bg_shape")]=(500, 500)
+    bg_shape:Annotated[Tuple[int, int], Parameter(name="--bg_shape")]=(640, 360) #width, height
+    width_mean_std:Tuple[float, float]=(41.0,17.75)#for figure
+    ratio_mean_std:Tuple[float, float]=(1.342, 0.179)
+    width_range:Tuple[float, float]=(20.0, 150.0)
 
 @dataclass
 class TransformConfig:
     normalize:bool=False
-    height:int=500 
-    width:int=500
+    height:int=300 
+    width:int=300
 

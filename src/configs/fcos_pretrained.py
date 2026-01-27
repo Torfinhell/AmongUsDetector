@@ -1,18 +1,21 @@
 from dataclasses import dataclass, field
 from src.configs.all_configs import ModelFcosPretrainedConfig,DatasetCreationConfig, DataModuleConfig, MetricConfig, TransformConfig
-from typing import Optional
+from typing import Optional, Annotated
+from cyclopts import Parameter
 
 @dataclass
 class TrainingConfig:
-    num_epochs:int=300
-    val_epoch_len:Optional[int]=50
-    train_epoch_len:Optional[int]=500
-    seed:int=1
-    logger_name:str="fcos_test"
-    logger:str="tensorboard"
-    grad_acum_scheduling:dict[str, int]=field(default_factory=lambda: {"0": 1}) # TODO
-    swa_epoch_start:Optional[int]=250
-    swa_lrs:Optional[float]=5e-3
+    num_epochs: Annotated[int, Parameter(name="--num_epochs")] = 300
+    val_epoch_len: Annotated[Optional[int], Parameter(name="--val_epoch_len")] = 50
+    train_epoch_len: Annotated[Optional[int], Parameter(name="--train_epoch_len")] = 500
+    seed: Annotated[int, Parameter(name="--seed")] = 1
+    logger_name: Annotated[str, Parameter(name="--logger_name")] = "fcos_test"
+    logger: str = "tensorboard"
+    grad_acum_scheduling: dict[str, int] = field(
+        default_factory=lambda: {"0": 1}
+    ) 
+    swa_epoch_start: Annotated[Optional[int], Parameter(name="--swa_epoch_start")] = 250
+    swa_lrs: Annotated[Optional[float], Parameter(name="--swa_lrs")] = 5e-3
 @dataclass
 class ModelTrainConfig:
     training_cfg: TrainingConfig=field(default_factory=lambda: TrainingConfig())

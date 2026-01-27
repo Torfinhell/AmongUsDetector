@@ -29,3 +29,7 @@ colors = [
     ("coral", "#EC7578")
 ]
 color_to_ind = {color: i for i, (color, _) in enumerate(colors)}
+def hex_to_bgr(hex_color):
+    hex_color = hex_color.lstrip('#')
+    r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+    return (b, g, r)

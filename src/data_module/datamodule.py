@@ -50,7 +50,6 @@ class AmongUsDatamodule(L.LightningDataModule):
                 path_to_csv=self.image_val_data+"/images.csv",
                 transform=FcosTransform(self.transform_cfg, part="val")
             )
-        if stage == "test" and self.image_test_data is not None :
             self.test_dataset = AmongUsImagesDataset(
                 path_to_images=self.image_test_data+"/images",
                 path_to_csv=self.image_test_data+"/images.csv",
@@ -83,24 +82,24 @@ class AmongUsDatamodule(L.LightningDataModule):
         )
 
     def val_dataloader(self):
-        return DataLoader(
+        return [DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             collate_fn=collate_fn,
             shuffle=False,
-        )
-    def predict_dataloader(self):
-        return DataLoader(
-            self.pred_dataset,
+        ),
+        DataLoader(
+            self.test_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             collate_fn=collate_fn,
             shuffle=False,
         )
-    def test_dataloader(self):
+        ]
+    def predict_dataloader(self):
         return DataLoader(
-            self.test_dataset,
+            self.pred_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             collate_fn=collate_fn,

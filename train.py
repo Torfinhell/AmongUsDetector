@@ -32,7 +32,7 @@ def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
     )
     # Setup callbacks
     checkpoint_callback = ModelCheckpoint(
-        monitor="mAP_score_val",
+        monitor="mAP_score_val_generated",
         mode="max",
         save_top_k=3,
         dirpath="checkpoints",
@@ -50,12 +50,11 @@ def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
         annealing_epochs=10,
         annealing_strategy="cos",
     )
-    test_every_n_epoch=TestEveryNEpochs(1)
     trainer = L.Trainer(
         accelerator="gpu",
         max_epochs=training_cfg.num_epochs,
         logger=tb_logger,
-        callbacks=[checkpoint_callback, lr_monitor, swa, grad_acum, test_every_n_epoch],
+        callbacks=[checkpoint_callback, lr_monitor, swa, grad_acum],
         log_every_n_steps=10,
         gradient_clip_val=6.0,
         enable_progress_bar=True,

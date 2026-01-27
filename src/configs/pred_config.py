@@ -5,7 +5,7 @@ from typing import Optional, Annotated
 
 @dataclass
 class InferenceConfig:
-    seed: int=1
+    seed: Annotated[int, Parameter(name="--seed")]=1
     checkpoint: Annotated[Optional[str], Parameter(name="--checkpoint")]=None
 
 

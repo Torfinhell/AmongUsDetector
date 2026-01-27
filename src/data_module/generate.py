@@ -8,7 +8,7 @@ from pathlib import Path
 import albumentations as A
 import csv
 import shutil
-from src.data_module.utils import colors
+from src.data_module.utils import colors, hex_to_bgr
 from tqdm.auto import tqdm
 from src.configs import DatasetCreationConfig
 from cyclopts import App
@@ -215,11 +215,8 @@ def generate_data(config: DatasetCreationConfig):
             bboxes = []
 
             for _ in range(random.randint(1, config.num_figures)):
-                width = random.randint(
-                    config.figure_size_range[0], config.figure_size_range[1]
-                )
-                height = int(width * 1.5)
-
+                width = int(np.clip(random.gauss(*config.width_mean_std), *config.width_range))
+                height = int(width*np.clip(random.gauss(*config.ratio_mean_std), 1.0, 3.0))
                 color_name, body = random_figure_color()
                 visors = [
                     body,
@@ -233,8 +230,8 @@ def generate_data(config: DatasetCreationConfig):
                 fg_img = svg_to_cv2_image(among_us, among_us.width, among_us.height)
                 if config.augment_figure:
                     fg_img = augment_figure_mask(fg_img)
-                if config.augment_mask:
-                    fg_img = augment_mask_only(fg_img)
+                # if config.augment_mask:
+                #     fg_img = augment_mask_only(fg_img)
                 height, width = fg_img.shape[:2]
                 x = random.randint(0, bg_w - width)
                 y = random.randint(height, bg_h)
@@ -245,7 +242,7 @@ def generate_data(config: DatasetCreationConfig):
                 if config.draw_bbox:
                     bbox = bboxes[-1]
                     cv2.rectangle(
-                        bg, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2
+                        bg, (bbox[0], bbox[1]), (bbox[2], bbox[3]), hex_to_bgr(body), 2
                     )
             img_path = destination_folder / "images" / f"among_us_{id}.png"
             cv2.imwrite(str(img_path), bg)
@@ -258,14 +255,3 @@ def generate_data(config: DatasetCreationConfig):
 
 if __name__ == "__main__":
     app()
-    # generate(
-    #     DatasetCreationConfig(
-    #         "data/image_train",
-    #         background_folder=None,
-    #         num_generations=100,
-    #         num_figures=5,
-    #         augment=True,
-    #         draw_bbox=True,
-    #         figure_size_range=(80, 150),
-    #     )
-    # )
