@@ -11,7 +11,7 @@ def check_data(images_folder:str, images_csv:str, output_folder:str):
     annotations=pd.read_csv(images_csv)
     images_folder=Path(images_folder)
     output_folder=Path(output_folder)
-    output_folder.mkdir(exist_ok=True)
+    output_folder.mkdir(exist_ok=True, parents=True)
     detections_dict=defaultdict(list)
     labels_dict=defaultdict(list)
     for _,(filename, *row) in annotations.iterrows():

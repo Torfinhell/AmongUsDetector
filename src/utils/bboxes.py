@@ -18,7 +18,7 @@ def drawbboxes(images:list[torch.tensor], preds:list[torch.tensor]):
         output_images.append(torch.from_numpy(img).permute(2, 0, 1))
     return output_images
 def create_output(images_paths, preds, resize_shape, output_folder):
-    Path(output_folder).mkdir(exist_ok=True)
+    Path(output_folder).mkdir(exist_ok=True, parents=True)
     for batch in zip(images_paths, preds):
         for image_path, pred in zip(batch[0], batch[1]):
             image = np.array(PIL.Image.open(image_path).convert("RGB"))
