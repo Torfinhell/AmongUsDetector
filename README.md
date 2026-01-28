@@ -54,7 +54,7 @@ uv run -m src.data_module.generate generate-data \
   --augment_figure=True \
   --augment_mask=True \
   --head_lr=8e-3 \
-  --backbone_lr=8e-3
+  --backbone_lr=8e-3 \
   --draw_bbox=False
 Optional params:
 --background_folder=data/backgrounds(if exists)
