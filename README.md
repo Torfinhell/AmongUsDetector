@@ -53,9 +53,7 @@ uv run -m src.data_module.generate generate-data \
   --num_figures=20 \
   --augment_figure=True \
   --augment_mask=True \
-  --head_lr=8e-3 \
-  --backbone_lr=8e-3 \
-  --draw_bbox=False
+  --draw_bbox=False 
 Optional params:
 --background_folder=data/backgrounds(if exists)
 ```
@@ -71,6 +69,9 @@ To train model run:
   --train_epoch_len=500 \
   --val_epoch_len=50 \
   --seed=1 \
+  --head_lr=8e-3 \
+  --backbone_lr=8e-3 \
+  --batch_size=8 \
   --swa_epoch_start=250 \
   --swa_lrs=5e-3
 Optional params(see src/configs/all_configs.py for model, datacreation or dataset configs)

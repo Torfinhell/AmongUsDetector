@@ -5,8 +5,8 @@ from typing import Optional, Tuple, Annotated
 @dataclass
 class ModelFcosPretrainedConfig:
     num_classes:int=18
-    heads_learning_rate:Annotated[Optional[float], Parameter(name="head_lr")]=8e-3
-    backbone_learning_rate:Annotated[Optional[float], Parameter(name="backbone_lr")]=8e-3
+    heads_learning_rate:Annotated[Optional[float], Parameter(name="--head_lr")]=8e-3
+    backbone_learning_rate:Annotated[Optional[float], Parameter(name="--backbone_lr")]=8e-3
     step_size:int=3
     weight_decay:float=0.0005  
     gamma:float=0.98
@@ -20,7 +20,7 @@ class ModelFcosPretrainedConfig:
     backbone_layers:int=5
     detections_per_img:int=20
     topk_candidates:int=1000
-    is_pretrained:Annotated[Optional[bool], Parameter(name="is_pretrained")]=True
+    is_pretrained:Annotated[Optional[bool], Parameter(name="--is_pretrained")]=True
 
 @dataclass
 class MetricConfig:
