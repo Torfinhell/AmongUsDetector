@@ -73,7 +73,7 @@ To train model run:
   --backbone_lr=8e-3 \
   --batch_size=8 \
   --swa_epoch_start=250 \
-  --swa_lrs=5e-3
+  --swa_lrs=5e-4
 Optional params(see src/configs/all_configs.py for model, datacreation or dataset configs)
 ```
 To inference model:

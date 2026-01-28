@@ -14,8 +14,7 @@ def drawbboxes(images:list[torch.tensor], preds:list[torch.tensor]):
             xmin, ymin, xmax, ymax = pred_bbox.detach().cpu().int().tolist()
             hex_color=colors[label][1]
             cv2.rectangle(img, (xmin, ymin),(xmax, ymax),
-                color=hex_to_bgr(hex_color), #TODO color with the color of predicted label
-                thickness=2)
+                color=hex_to_bgr(hex_color))
         output_images.append(torch.from_numpy(img).permute(2, 0, 1))
     return output_images
 def create_output(images_paths, preds, resize_shape, output_folder):
