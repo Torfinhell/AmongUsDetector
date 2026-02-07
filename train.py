@@ -62,7 +62,10 @@ def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
         limit_val_batches=training_cfg.val_epoch_len,
         reload_dataloaders_every_n_epochs=cfg.datamodule_cfg.generate_every_epoch
     )
-    model = ModelFcosPretrained(cfg)
+    if training_cfg.finetune_chk is not None:
+        model = ModelFcosPretrained.load_from_checkpoint(training_cfg.finetune_chk, weights_only=False)
+    else:
+        model = ModelFcosPretrained(cfg)
     trainer.fit(model=model, datamodule=data_module)
 
 

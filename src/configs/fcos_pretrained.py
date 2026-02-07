@@ -16,6 +16,7 @@ class TrainingConfig:
     ) 
     swa_epoch_start: Annotated[Optional[int], Parameter(name="--swa_epoch_start")] = 250
     swa_lrs: Annotated[Optional[float], Parameter(name="--swa_lrs")] = 5e-3
+    finetune_chk:Annotated[Optional[str], Parameter(name="--finetune_chk")]=None
 @dataclass
 class ModelTrainConfig:
     training_cfg: TrainingConfig=field(default_factory=lambda: TrainingConfig())

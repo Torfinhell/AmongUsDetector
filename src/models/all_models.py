@@ -20,6 +20,7 @@ class MyModel(L.LightningModule):
         if self.use_nms:
             self.mAP_score_nms = {"generated":PRauc(self.metrics_cfg), "test":PRauc(self.metrics_cfg)}
         self.dataloader_names = {0: "generated", 1: "test"}
+        self.losses_names=['classification', 'bbox_regression', 'bbox_ctrness', "total_loss"]
         
 
     def get_model(self):
@@ -47,14 +48,10 @@ class MyModel(L.LightningModule):
 
     def on_train_epoch_end(self):
         """Called at the end of each training epoch"""
-        avg_loss = self.trainer.callback_metrics.get("loss_train_epoch", None)
-        if avg_loss is not None:
-            self.train_losses.append(
-                avg_loss.item() if hasattr(avg_loss, "item") else float(avg_loss)
-            )
-            print(
-                f"Epoch {self.current_epoch} - Train Loss: {self.train_losses[-1]:.6f}"
-            )
+        for loss_kind in self.losses_names:
+                avg_loss = self.trainer.callback_metrics.get(f"train/{loss_kind}", None)
+                if avg_loss is not None:
+                    print(f"Epoch {self.current_epoch} - {loss_kind} Train Loss: {avg_loss.item():.6f}")
     def on_after_backward(self):
         if self.metrics_cfg.log_grad_norm:
             self.log(
@@ -70,9 +67,10 @@ class MyModel(L.LightningModule):
     def on_validation_epoch_end(self):
         """Called at the end of each validation epoch"""
         for name_val_ds in self.dataloader_names.values():
-            avg_loss = self.trainer.callback_metrics.get(f"loss_val_{name_val_ds}", None)
-            if avg_loss is not None:
-                print(f"Epoch {self.current_epoch} - Val Loss: {avg_loss.item():.6f}")
+            for loss_kind in self.losses_names:
+                avg_loss = self.trainer.callback_metrics.get(f"val_{name_val_ds}/{loss_kind}", None)
+                if avg_loss is not None:
+                    print(f"Epoch {self.current_epoch} - {loss_kind} Val_{name_val_ds} Loss: {avg_loss.item():.6f}")
             mAP_score = self.mAP_score[name_val_ds].compute()
             self.log_dict(
                 {
@@ -99,8 +97,10 @@ class MyModel(L.LightningModule):
         if(kind == "train" or kind.startswith("val")):
             self.model.train()
             with torch.set_grad_enabled(kind == "train"):
-                preds = self.model(images, targets)
-                loss = self.criterion(preds, targets)
+                losses = self.model(images, targets)
+                losses["total_loss"] = self.criterion(losses, targets)
+                for loss_kind in self.losses_names:
+                    self.log(f"{kind}/{loss_kind}", losses[loss_kind], on_step=True, on_epoch=True, add_dataloader_idx=False)
         if kind.startswith("val"):
             self.model.eval()
             with torch.no_grad():
@@ -117,5 +117,4 @@ class MyModel(L.LightningModule):
                 preds = self.model(images, targets)
             return images_paths, preds
             #TODO Reshape back the points and log images using batch_idx
-        self.log(f"loss_{kind}", loss.item(), on_step=True, on_epoch=True, add_dataloader_idx=False)
-        return loss
+        return losses["total_loss"]

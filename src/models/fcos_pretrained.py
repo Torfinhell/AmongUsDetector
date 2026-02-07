@@ -5,6 +5,7 @@ from torchvision.models.detection.fcos import FCOSClassificationHead
 from src.losses import fcos_loss_fn
 from functools import partial
 from src.configs import ModelTrainConfig
+from functools import partial
 
 
 class ModelFcosPretrained(MyModel):
@@ -49,7 +50,7 @@ class ModelFcosPretrained(MyModel):
         Uses the built-in loss computation from FCOS model.
         Returns a wrapper function that extracts losses from model output.
         """
-        return fcos_loss_fn
+        return partial(fcos_loss_fn, lambdas=self.model_cfg.lambdas)
 
     def configure_optimizers(self):
         """

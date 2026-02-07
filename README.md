@@ -11,14 +11,14 @@ uv sync
 ```
 ## Scripts
 
-To download checkpoints and initialize xml annotations and checkpoints(all links are available at GDRIVE_URLS in this file) run:
+To download checkpoints and initialize xml annotations (all links are available at GDRIVE_URLS in this file) run:
 ```
 uv run scripts/download_xml_ckpt.py 
 ```
 To create test folder for training from xml anotations run:
 ```
 uv run scripts/test_from_annotations.py create \
-  --annotations_dir=data/annotations/Annotations \
+  --annotations_dir=data/annotations/Annotations/extracted_frames \
   --image_dir=data/extracted_frames \
   --output_folder=data/image_train_data/test
 
@@ -71,9 +71,10 @@ To train model run:
   --seed=1 \
   --head_lr=8e-3 \
   --backbone_lr=8e-3 \
-  --batch_size=8 \
+  --batch_size=35 \
   --swa_epoch_start=250 \
-  --swa_lrs=5e-4
+  --swa_lrs=5e-4 \
+  --background_folder=maps
 Optional params(see src/configs/all_configs.py for model, datacreation or dataset configs)
 ```
 To inference model:

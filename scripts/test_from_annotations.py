@@ -17,15 +17,14 @@ def create_from_xml(annotations_dir:str, image_dir:str, output_folder:str):
     for file in os.listdir(annotations_dir):
         if not file.endswith(".xml"):
             continue
-
         xml_path = os.path.join(annotations_dir, file)
         tree = ET.parse(xml_path)
         root = tree.getroot()
 
-        filename = root.find("filename").text
+        filename = Path(root.find("filename").text).name
         image=cv2.imread(image_dir/filename)
         height, width, _=image.shape
-        cv2.imwrite(output_folder /"images" /filename, image)
+        cv2.imwrite(output_folder /"images"/filename, image)
 
         for obj in root.findall("object"):
             figure_color = obj.find("name").text

@@ -21,22 +21,23 @@ class ModelFcosPretrainedConfig:
     detections_per_img:int=20
     topk_candidates:int=1000
     is_pretrained:Annotated[Optional[bool], Parameter(name="--is_pretrained")]=True
+    lambdas:Tuple[float, float, float]=(1.0, 2.0, 3.0)
 
 @dataclass
 class MetricConfig:
     mAP_iou_thr: float = 0.9  
     log_grad_norm: Optional[bool] = True
-    log_image_folder:str="data/image_log"
-    log_image_num_step:Annotated[Optional[int],Parameter(name="--log_image_num_step")]=100
+    # log_image_folder:str="data/image_log"
+    # log_image_num_step:Annotated[Optional[int],Parameter(name="--log_image_num_step")]=100
 
 @dataclass
 class DataModuleConfig:
     generate_new:Annotated[Optional[bool],Parameter(name="--generate_new")]=True #TODO
     generate_every_epoch:Annotated[Optional[int],Parameter(name="--generate_every_epoch")]=1 #TODO
-    batch_size:Annotated[int, Parameter(name="--batch_size")]=30
+    batch_size:Annotated[int, Parameter(name="--batch_size")]=35
     num_workers:Annotated[int, Parameter(name="--num_workers")]=4
-    val_num_generations:Annotated[int, Parameter(name="--val_num_gen")]=1500#50*30
-    train_num_generations:Annotated[int, Parameter(name="--train_num_gen")]=3000#100*30
+    val_num_generations:Annotated[int, Parameter(name="--val_num_gen")]=1750#50*35
+    train_num_generations:Annotated[int, Parameter(name="--train_num_gen")]=3500#100*35
     image_val_folder:Annotated[Optional[str], Parameter(name="--val_folder")]=None
     image_train_folder:Annotated[Optional[str], Parameter(name="--train_folder")]=None
     image_test_folder:Annotated[Optional[str], Parameter(name="--test_folder")]=None
@@ -61,6 +62,6 @@ class DatasetCreationConfig:
 @dataclass
 class TransformConfig:
     normalize:bool=False
-    height:int=300 
-    width:int=300
+    height:int=100 
+    width:int=100
 

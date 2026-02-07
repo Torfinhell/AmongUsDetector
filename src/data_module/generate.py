@@ -160,20 +160,14 @@ def random_hex_color():
     )
 
 
-def load_random_background(folder, width=800, height=600):
-    folder = Path(folder)
-    paths = list(folder.glob("*"))
-
-    if not paths:
-        raise ValueError(f"No background images found in {folder}")
-
-    img_path = random.choice(paths)
-    bg = cv2.imread(str(img_path))
-
+def load_random_background(images, width=800, height=600, border_frac = 0.1):
+    bg = random.choice(images)
     if bg is None:
         raise ValueError(f"Cannot read background image: {img_path}")
-
-    return cv2.resize(bg, (width, height))
+    h, w = bg.shape[:2]
+    y = np.random.randint(int(h * border_frac), h - height - int(h * border_frac) + 1)
+    x = np.random.randint(int(w * border_frac), w - width - int(w * border_frac) + 1)
+    return bg[y:y+height, x:x+width]
 
 
 # ------------------------------------------------------------
@@ -197,7 +191,14 @@ def generate_data(config: DatasetCreationConfig):
                 p.unlink()
     (destination_folder / "images").mkdir(parents=True, exist_ok=True)
     csv_file = destination_folder / "images.csv"
-
+    if config.background_folder:
+        bg_images=[]
+        folder = Path(config.background_folder)
+        bg_paths = list(folder.glob("*"))
+        if not bg_paths:
+            raise ValueError(f"No background images found in {folder}")
+        for bg_path in bg_paths:
+            bg_images.append(cv2.imread(str(bg_path)))
     with open(csv_file, "w", newline="") as f_csv:
         writer = csv.writer(f_csv)
         writer.writerow(
@@ -207,7 +208,7 @@ def generate_data(config: DatasetCreationConfig):
             range(config.num_generations), desc="Generating...", leave=False
         ):
             if config.background_folder:
-                bg = load_random_background(config.background_folder, *config.bg_shape)
+                bg = load_random_background(bg_images, *config.bg_shape)
             else:
                 bg = random_background(*config.bg_shape)
 
