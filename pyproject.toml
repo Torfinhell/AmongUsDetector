@@ -8,6 +8,7 @@ dependencies = [
     "albumentations>=2.0.8",
     "cairosvg>=2.8.2",
     "cyclopts>=4.4.1",
+    "deepface>=0.0.98",
     "gdown>=5.2.1",
     "lightning>=2.6.0",
     "matplotlib>=3.10.8",

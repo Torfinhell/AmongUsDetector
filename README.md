@@ -42,7 +42,7 @@ uv run scripts/extract_frames.py download \
   --download_frames_path=data/extracted_frames
 
 Optional param: 
---num_frames_per_sec(default 2)
+--num_frames_per_sec(default None)
 
 ```
 To generate dataset with synthesized figures:
