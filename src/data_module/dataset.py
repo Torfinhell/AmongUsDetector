@@ -1,14 +1,18 @@
-from torch.utils.data import Dataset
-from pathlib import Path
-import pandas as pd
-from collections import defaultdict
-import PIL.Image
-import numpy as np
-import torch
-from .utils import color_to_ind
-import torchvision.transforms.v2 as v2
 import os
+from collections import defaultdict
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import PIL.Image
+import torch
+import torchvision.transforms.v2 as v2
 from torch import nn
+from torch.utils.data import Dataset
+
+from .utils import color_to_ind
+
+
 class AmongUsImagesDataset(Dataset):
 
     def __init__(
@@ -25,8 +29,10 @@ class AmongUsImagesDataset(Dataset):
             augment: Whether to apply augmentation (currently unused, use transform instead)
             transform: Transform to apply (e.g., FcosTransform instance)
         """
-        self.path_to_images = Path(path_to_images) 
-        assert os.path.exists(self.path_to_images), f"Path to {self.path_to_images} should exist to load images"
+        self.path_to_images = Path(path_to_images)
+        assert os.path.exists(
+            self.path_to_images
+        ), f"Path to {self.path_to_images} should exist to load images"
         self.transform = transform
         self.images_paths = sorted(
             [
@@ -48,8 +54,6 @@ class AmongUsImagesDataset(Dataset):
                 for _, row in images_info.iterrows():
                     self.bboxes[row.iloc[0]].append(list(row.iloc[1:5]))
                     self.labels[row.iloc[0]].append(color_to_ind[row.iloc[5]])
-
-
 
     def __getitem__(self, idx):
         """
@@ -75,10 +79,15 @@ class AmongUsImagesDataset(Dataset):
         else:
             boxes = torch.zeros((0, 4), dtype=torch.float32)
             labels = torch.zeros((0,), dtype=torch.int64)
-        return {"image":image, "boxes": boxes, "labels": labels, "image_path":image_path}
+        return {
+            "image": image,
+            "boxes": boxes,
+            "labels": labels,
+            "image_path": image_path,
+        }
 
     def __len__(self):
         return len(self.images_paths)
-    def show_dataset(num_images:int, model:nn.Module):
-        pass
 
+    def show_dataset(num_images: int, model: nn.Module):
+        pass

@@ -1,85 +1,210 @@
-import cv2 as cv
-import random
+import glob
 import os
-import shutil
+import random
+from collections import Counter
 from pathlib import Path
 from typing import Optional, Union
-from pathlib import Path
+
+import cv2 as cv
+import editdistance
+import faiss
+import numpy as np
+import pandas as pd
 from cyclopts import App
-from tqdm.auto import tqdm
 from deepface import DeepFace
+from tqdm.auto import tqdm
+
+from scripts.create_face_db import ALIGN, FACE_THR, DetectorBackend, FaceEmbModel
+from scripts.extract_texts import extract_texts
+from src.utils import CsvChunkDownloader, delete_img_in_folder
+
 app = App(name="Define Config for generating frames for testing:")
-VIDEO_FOLDER=Path("data/videos")
-EXCLUDE_VIDEOS=[VIDEO_FOLDER/"DUMBEST SIDEMEN AMONG US EVER.mp4"]
-ALL_VIDEOS=[video_path for video_path in VIDEO_FOLDER.iterdir() if video_path not in EXCLUDE_VIDEOS]
-metrics = ["cosine", "euclidean", "euclidean_l2", "angular"]
-USED_METRIC=metrics[0]
-backends = [
-    'opencv', 'ssd', 'dlib', 'mtcnn', 'fastmtcnn',
-    'retinaface', 'mediapipe', 'yolov8n', 'yolov8m', 
-    'yolov8l', 'yolov11n', 'yolov11s', 'yolov11m',
-    'yolov11l', 'yolov12n', 'yolov12s', 'yolov12m',
-    'yolov12l', 'yunet', 'centerface',
+VIDEO_FOLDER = Path("data/videos")
+EXCLUDE_VIDEOS = [
+    VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4"
+]  # this is our test set
+ALL_VIDEOS = [
+    video_path
+    for video_path in VIDEO_FOLDER.iterdir()
+    if video_path not in EXCLUDE_VIDEOS
 ]
-USED_DETECTOR = backends[3]
-ALIGN = True
-@app.command(name="download")#filter with faces and then filter with text
-def download_frames_from_video(video_folder:Union[str, list[str]]=ALL_VIDEOS, download_frames_path:str="data/extracted_frames", num_frames_per_sec:Optional[int]=None, one_face:bool=False):
-    if not isinstance(video_folder, list):#video folder can be path
-        video_folder=[video_folder]
-    if os.path.exists(download_frames_path):
-        shutil.rmtree(download_frames_path)
-    os.makedirs(download_frames_path, exist_ok=True)
-    for video_path in tqdm(video_folder, leave=True):
-        print(video_path)
-        cap=cv.VideoCapture(video_path)
-        num_frames=int(cap.get(cv.CAP_PROP_FRAME_COUNT))
-        fps=int(cap.get(cv.CAP_PROP_FPS))
-        duration=num_frames/fps
-        num_frames_per_sec=num_frames_per_sec or fps
-        print(f"Duration is {duration}s with fps={fps}. Generating {num_frames_per_sec} per sec")
-        frame_ids=sorted([sec*fps+elem for sec in range(int(duration)) for elem in random.sample(range(int(fps)), num_frames_per_sec)])
-        frame_counter=0
-        sample_counter=0
-        saved_counter=0
-        sample_id=0
-        prev_face=None
-        for _ in tqdm(range(int(fps*duration)), leave=True):
-            if(saved_counter==len(frame_ids)):
-                break
-            ret, frame=cap.read()
-            if not ret:
-                print(f"Can't recieve stream from {video_path}")
-                break
-            if(frame_counter!=frame_ids[saved_counter]):
-                frame_counter+=1
-                continue
-            if(one_face):
-                faces=get_faces(frame)
-                if(len(faces)!=1):
-                    if(prev_face is not None):
-                        sample_id+=1
-                        sample_counter=0
-                    prev_face=None
+MODEL = FaceEmbModel.VGG_Face.value
+USED_DETECTOR = DetectorBackend.FASTMTCNN.value
+SIM_THRESHOLD = 0.60
+
+
+# ADD VIDEO PATH to csv file
+@app.command(name="download")  # filter with faces and then filter with text
+def download_frames_from_video(
+    video_folder: list[str] = ALL_VIDEOS,
+    upload_frames_path: str = "data/extracted_frames",
+    num_frames_per_sec: Optional[int] = 1,
+    face_db="data/df_faces_final",
+    filter_faces: bool = False,
+    filter_text: bool = False,
+    yandex_token: Optional[str] = None,
+):
+    upload_frames_path = Path(upload_frames_path)
+    delete_img_in_folder(upload_frames_path)
+    os.makedirs(upload_frames_path / "images", exist_ok=True)
+    columns = ["file_name", "video_name"]
+    if filter_text:
+        columns.append("extracted_text")
+        columns.append("game_state")
+        columns.append("is_imposter")
+    if filter_faces:
+        columns.append("face_id")
+        embeddings = []
+        labels = []
+
+        for img_path in list(Path(face_db).rglob("*.png")):
+            rep = DeepFace.represent(
+                img_path=str(img_path), model_name=MODEL, enforce_detection=False
+            )
+            embedding = np.array(rep[0]["embedding"], dtype=np.float32)
+            embedding /= np.linalg.norm(embedding)
+            embeddings.append(embedding)
+            labels.append(img_path.parent.stem)
+        embeddings = np.stack(embeddings)
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatIP(dimension)
+        index.add(embeddings)
+    saved_counter = 0
+    with CsvChunkDownloader(
+        upload_frames_path / "images.csv",
+        columns=columns,
+        yandex_token=yandex_token,
+        chunk_rows=1,
+    ) as csv_download:
+        for video_path in tqdm(video_folder, leave=True):
+            print(video_path)
+            cap = cv.VideoCapture(video_path)
+            num_frames = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+            fps = int(cap.get(cv.CAP_PROP_FPS))
+            duration = num_frames / fps
+            num_frames_per_sec = num_frames_per_sec or fps
+            print(
+                f"Duration is {duration}s with fps={fps}. Generating {num_frames_per_sec} per sec"
+            )
+            frame_ids = sorted(
+                [
+                    sec * fps + elem
+                    for sec in range(int(duration))
+                    for elem in random.sample(range(int(fps)), num_frames_per_sec)
+                ]
+            )
+            frame_cnt = 0
+            frames_chosen_cnt = 0
+            for _ in tqdm(range(int(fps * duration)), leave=True):
+                if frames_chosen_cnt == len(frame_ids):
+                    break
+                ret, frame = cap.read()
+                if not ret:
+                    print(f"Can't recieve stream from {video_path}")
+                    break
+                if frame_cnt != frame_ids[frames_chosen_cnt]:
+                    frame_cnt += 1
                     continue
-                if(prev_face is None or similiar_faces(prev_face, faces[0])):
-                    cv.imwrite(f"{download_frames_path}/{Path(video_path).stem}/{sample_id}/{sample_counter}.png", frame)
-                    sample_counter+=1
-                else:
-                    sample_id+=1
-                    sample_counter=0
-                    cv.imwrite(f"{download_frames_path}/{Path(video_path).stem}/{sample_id}/{sample_counter}.png", frame)
-            else:
-                cv.imwrite(f"{download_frames_path}/{Path(video_path).stem}/{saved_counter}.png", frame)
-            saved_counter+=1
-            frame_counter+=1
-    cap.release()
-def get_faces(frame):
-    face_objs = DeepFace.extract_faces(frame)
-    return [frame]
-def similiar_faces(face1, face2):
-    retdistance=DeepFace.verify(
-        img1_path = "img1.jpg", img2_path = "img2.jpg", distance_metric = metrics[1]
-    )
-if __name__=="__main__":
+                file_name = f"{saved_counter}.png"
+                data_row = []
+                data_row.append(Path(file_name).name)
+                data_row.append(Path(video_path).stem)
+                if filter_text:
+                    texts = extract_texts(frame)
+                    data_row.append(texts)
+                    if any([has_word_inside(text, ["voting end"]) for text in texts]):
+                        data_row.append("voting")
+                    elif any([has_word_inside(text, ["Who is t"]) for text in texts]):
+                        data_row.append("meeting")
+                    elif any([has_word_inside(text, ["Your role"]) for text in texts]):
+                        data_row.append("reavealing role")
+                    elif any([has_word_inside(text, ["Fix Lights"]) for text in texts]):
+                        data_row.append("lights")
+                    elif any([has_word_inside(text, ["EMERGENCY"]) for text in texts]):
+                        data_row.append("emergency button")
+                    elif any([has_word_inside(text, ["dead body"]) for text in texts]):
+                        data_row.append("dead body")
+                    elif any(
+                        [has_word_inside(text, ["Oxygen Depleted"]) for text in texts]
+                    ):
+                        data_row.append("oxygen")
+                    elif any(
+                        [has_word_inside(text, ["ping: ms"], 4) for text in texts]
+                    ):
+                        data_row.append("running")
+                    else:
+                        frame_cnt += 1
+                        frames_chosen_cnt += 1
+                        continue
+                    data_row.append(
+                        any(
+                            [
+                                has_word_inside(text, ["SADOUAGE", "SABOTAGE"])
+                                for text in texts
+                            ]
+                        )
+                    )
+                if filter_faces:
+                    face_detections = DeepFace.extract_faces(
+                        img_path=frame,
+                        detector_backend=USED_DETECTOR,
+                        align=ALIGN,
+                        enforce_detection=False,
+                    )
+                    matched_face_ids = []
+                    for detection in face_detections:
+                        if detection["confidence"] < FACE_THR:
+                            continue
+                        x, y, w, h = (
+                            int(detection["facial_area"][key_x])
+                            for key_x in ["x", "y", "w", "h"]
+                        )
+                        max_y, max_x, _ = frame.shape
+                        xmin, ymin, xmax, ymax = (
+                            max(0, x - w // 4),
+                            max(0, y - h // 4),
+                            min(x + w + w // 4, max_x),
+                            min(y + h + h // 4, max_y),
+                        )
+                        cropped = cv.resize(frame[ymin:ymax, xmin:xmax], (400, 400))
+                        query_emb = DeepFace.represent(
+                            img_path=cropped, model_name=MODEL, enforce_detection=False
+                        )[0]["embedding"]
+                        query_emb = np.array(query_emb, dtype=np.float32)
+                        query_emb /= np.linalg.norm(query_emb)
+                        query_emb = query_emb.reshape(1, -1)
+                        found_dist, found_index = index.search(query_emb, k=1)
+                        if found_dist[0][0] > SIM_THRESHOLD:
+                            matched_face_ids.append(labels[found_index[0][0]])
+                    face_names = Counter(matched_face_ids)
+                    if len(face_names) != 1:
+                        continue
+                    data_row.append(list(face_names)[0])
+                csv_download.update_csv(pd.Series(data_row, index=columns))
+                cv.imwrite(
+                    f"{upload_frames_path}/images/{saved_counter}.png",
+                    frame,
+                )
+                saved_counter += 1
+                frames_chosen_cnt += 1
+                frame_cnt += 1
+            cap.release()
+
+
+def has_word_inside(text, words, num_subst=2):
+    text = text.lower()
+    words = [word.lower() for word in words]
+    for word in words:
+        wlen = len(word)
+        if wlen > len(text):
+            continue
+        for i in range(len(text) - wlen + 1):
+            window = text[i : i + wlen]
+            if editdistance.eval(window, word) <= num_subst:
+                return True
+
+    return False
+
+
+if __name__ == "__main__":
     app()

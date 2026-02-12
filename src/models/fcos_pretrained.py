@@ -1,20 +1,19 @@
-from .all_models import MyModel
+from functools import partial
+
 import torch
 from torchvision.models.detection import fcos_resnet50_fpn
 from torchvision.models.detection.fcos import FCOSClassificationHead
-from src.losses import fcos_loss_fn
-from functools import partial
+
 from src.configs import ModelTrainConfig
-from functools import partial
+from src.losses import fcos_loss_fn
+
+from .all_models import MyModel
 
 
 class ModelFcosPretrained(MyModel):
-    def __init__(
-        self,
-        cfg: ModelTrainConfig
-    ):
+    def __init__(self, cfg: ModelTrainConfig):
         self.model_cfg = cfg.model_cfg
-        if(getattr(cfg, "training_cfg", None) is not None):
+        if getattr(cfg, "training_cfg", None) is not None:
             self.num_epochs = cfg.training_cfg.num_epochs
         super().__init__(cfg)
 

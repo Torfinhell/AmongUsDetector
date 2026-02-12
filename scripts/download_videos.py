@@ -1,6 +1,7 @@
-from pytubefix import Playlist
 import os
 from pathlib import Path
+
+from pytubefix import Playlist
 
 BASE = Path(__file__).resolve().parent
 

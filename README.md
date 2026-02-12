@@ -8,12 +8,13 @@ conda create -n among_us python=3.11
 conda activate among_us
 pip install uv
 uv sync
+sudo apt install tesseract-ocr
 ```
 ## Scripts
 
 To download checkpoints and initialize xml annotations (all links are available at GDRIVE_URLS in this file) run:
 ```
-uv run scripts/download_xml_ckpt.py 
+uv run scripts/gdrive_download.py
 ```
 To create test folder for training from xml anotations run:
 ```
@@ -38,10 +39,10 @@ uv run -m scripts.check_data check_data \
 To extract frames from video for annotation:
 ```
 uv run scripts/extract_frames.py download \
-  --video_path="data/videos/DUMBEST SIDEMEN AMONG US EVER.mp4" \
+  --video_folder="data/videos/DUMBEST SIDEMEN AMONG US EVER.mp4" \
   --download_frames_path=data/extracted_frames
 
-Optional param: 
+Optional param:
 --num_frames_per_sec(default None)
 
 ```
@@ -53,7 +54,7 @@ uv run -m src.data_module.generate generate-data \
   --num_figures=20 \
   --augment_figure=True \
   --augment_mask=True \
-  --draw_bbox=False 
+  --draw_bbox=False
 Optional params:
 --background_folder=data/backgrounds(if exists)
 ```

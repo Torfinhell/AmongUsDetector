@@ -1,28 +1,38 @@
+import random
+
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+
 from src.configs import TransformConfig
-import random
+
+
 class FcosTransform:
     """
     Basic FCOS transform that resizes images to a consistent size and converts to tensor.
     FCOS works best with images resized to multiples of 32 for FPN alignment.
     """
 
-    def __init__(self, transform_cfg:TransformConfig, part="train"):
+    def __init__(self, transform_cfg: TransformConfig, part="train"):
         """
         Args:
             image_size: Target image size (will be resized to image_size x image_size)
         """
-        self.normalize=transform_cfg.normalize
-        self.part=part
-        normalize_trans=A.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225],
-                    max_pixel_value=255.0,
-                ) if self.normalize  else A.Normalize(mean=(0,0,0), std=(1,1,1), max_pixel_value=255.0) 
+        self.normalize = transform_cfg.normalize
+        self.part = part
+        normalize_trans = (
+            A.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+                max_pixel_value=255.0,
+            )
+            if self.normalize
+            else A.Normalize(mean=(0, 0, 0), std=(1, 1, 1), max_pixel_value=255.0)
+        )
         self.transform = A.Compose(
             [
-                A.Resize(transform_cfg.height, transform_cfg.width), #TODO maybe change later to A.RandomResizeCrop()
+                A.Resize(
+                    transform_cfg.height, transform_cfg.width
+                ),  # TODO maybe change later to A.RandomResizeCrop()
                 normalize_trans,
                 ToTensorV2(),
             ],
@@ -32,7 +42,6 @@ class FcosTransform:
                 min_visibility=0,
             ),
         )
-       
 
     def __call__(self, image, bboxes):
         """

@@ -1,10 +1,12 @@
-import os
-import torch
-import cv2
 import argparse
+import os
+
+import cv2
 import numpy as np
+import torch
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from torch.utils.data import Dataset, DataLoader
+
 from models.fcos_pretrained import ModelFcosPretrained
 
 

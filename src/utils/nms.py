@@ -1,5 +1,7 @@
 import torch
+
 from .iou import iou_score
+
 
 def nms(preds, iou_thr=0.9):
     pred_output = []

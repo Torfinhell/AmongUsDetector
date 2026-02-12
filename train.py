@@ -1,18 +1,19 @@
 import lightning as L
-from src.data_module import AmongUsDatamodule
-from src.models import ModelFcosPretrained
-from lightning.pytorch.loggers import TensorBoardLogger
-from lightning.pytorch  import seed_everything
+import torch
+from cyclopts import App
+from lightning.pytorch import seed_everything
 from lightning.pytorch.callbacks import (
-    ModelCheckpoint,
     GradientAccumulationScheduler,
     LearningRateMonitor,
+    ModelCheckpoint,
     StochasticWeightAveraging,
 )
-from src.utils import TestEveryNEpochs
+from lightning.pytorch.loggers import TensorBoardLogger
+
 from src.configs import ModelTrainConfig
-from cyclopts import App
-import torch
+from src.data_module import AmongUsDatamodule
+from src.models import ModelFcosPretrained
+from src.utils import TestEveryNEpochs
 
 app = App(name="Define Config for training:")
 
@@ -24,7 +25,9 @@ def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
     torch.set_float32_matmul_precision("high")
 
     # initialize Datamodule
-    data_module = AmongUsDatamodule(cfg.datamodule_cfg, cfg.creation_cfg, cfg.transform_cfg)
+    data_module = AmongUsDatamodule(
+        cfg.datamodule_cfg, cfg.creation_cfg, cfg.transform_cfg
+    )
     # Setup TensorBoard logger
 
     tb_logger = TensorBoardLogger(
@@ -60,10 +63,12 @@ def train_fcos(cfg: ModelTrainConfig = ModelTrainConfig()):
         enable_progress_bar=True,
         limit_train_batches=training_cfg.train_epoch_len,
         limit_val_batches=training_cfg.val_epoch_len,
-        reload_dataloaders_every_n_epochs=cfg.datamodule_cfg.generate_every_epoch
+        reload_dataloaders_every_n_epochs=cfg.datamodule_cfg.generate_every_epoch,
     )
     if training_cfg.finetune_chk is not None:
-        model = ModelFcosPretrained.load_from_checkpoint(training_cfg.finetune_chk, weights_only=False)
+        model = ModelFcosPretrained.load_from_checkpoint(
+            training_cfg.finetune_chk, weights_only=False
+        )
     else:
         model = ModelFcosPretrained(cfg)
     trainer.fit(model=model, datamodule=data_module)

@@ -1,18 +1,21 @@
+import csv
+import random
+from io import BytesIO
+from pathlib import Path
+
+import albumentations as A
+import cairosvg
 import cv2
 import numpy as np
-import random
-import cairosvg
-from io import BytesIO
-from PIL import Image
-from pathlib import Path
-import albumentations as A
-import csv
-import shutil
-from src.data_module.utils import colors, hex_to_bgr
-from tqdm.auto import tqdm
-from src.configs import DatasetCreationConfig
 from cyclopts import App
-app=App(name="Generating dataset for training")
+from PIL import Image
+from tqdm.auto import tqdm
+
+from src.configs import DatasetCreationConfig
+from src.utils import colors, delete_img_in_folder, hex_to_bgr
+
+app = App(name="Generating dataset for training")
+
 
 class AmongUs:
     body_path = (
@@ -160,19 +163,20 @@ def random_hex_color():
     )
 
 
-def load_random_background(images, width=800, height=600, border_frac = 0.1):
+def load_random_background(images, width=800, height=600, border_frac=0.1):
     bg = random.choice(images)
     if bg is None:
         raise ValueError(f"Cannot read background image: {img_path}")
     h, w = bg.shape[:2]
     y = np.random.randint(int(h * border_frac), h - height - int(h * border_frac) + 1)
     x = np.random.randint(int(w * border_frac), w - width - int(w * border_frac) + 1)
-    return bg[y:y+height, x:x+width]
+    return bg[y : y + height, x : x + width]
 
 
 # ------------------------------------------------------------
 # MAIN GENERATOR WITH BBOX
 # ------------------------------------------------------------
+
 
 @app.command
 def generate_data(config: DatasetCreationConfig):
@@ -183,16 +187,11 @@ def generate_data(config: DatasetCreationConfig):
     Saves bounding boxes to a CSV file: filename,x_min,y_min,x_max,y_max
     """
     destination_folder = Path(config.destination_folder)
-    if (destination_folder/"images").exists():
-        image_exts = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp", ".csv"}
-        images_dir = destination_folder / "images"
-        for p in images_dir.rglob("*"):
-            if p.suffix.lower() in image_exts:
-                p.unlink()
+    delete_img_in_folder(destination_folder / "images")
     (destination_folder / "images").mkdir(parents=True, exist_ok=True)
     csv_file = destination_folder / "images.csv"
     if config.background_folder:
-        bg_images=[]
+        bg_images = []
         folder = Path(config.background_folder)
         bg_paths = list(folder.glob("*"))
         if not bg_paths:
@@ -216,8 +215,12 @@ def generate_data(config: DatasetCreationConfig):
             bboxes = []
 
             for _ in range(random.randint(1, config.num_figures)):
-                width = int(np.clip(random.gauss(*config.width_mean_std), *config.width_range))
-                height = int(width*np.clip(random.gauss(*config.ratio_mean_std), 1.0, 3.0))
+                width = int(
+                    np.clip(random.gauss(*config.width_mean_std), *config.width_range)
+                )
+                height = int(
+                    width * np.clip(random.gauss(*config.ratio_mean_std), 1.0, 3.0)
+                )
                 color_name, body = random_figure_color()
                 visors = [
                     body,
