@@ -77,7 +77,7 @@ def inference_qwen(
     ) as started_csv:
         with CsvChunkDownloader(
             csv_finish,
-            columns=input_csv.columns
+            columns=list(input_csv.columns)
             + ["xmin", "ymin", "xmax", "ymax", "figure_color"],
             download_from_disk=True,
             yandex_token=yandex_token,
@@ -102,7 +102,7 @@ def inference_qwen(
                     game_state,
                     is_imposter,
                     face_id,
-                ) in input_csv["video_name" == video_name].iterrows():
+                ) in input_csv[input_csv["video_name"] == video_name].iterrows():
                     # if game_state != "running":
                     #     continue
                     image_path = input_folder / "images" / file_name
@@ -171,7 +171,7 @@ def get_figure_color(image):
     for color_name, hex_color in colors:
         dist = distance_bgr(center_pixel, hex_to_bgr(hex_color))
         if min_dist is None or dist < min_dist:
-            dist = min_dist
+            min_dist = dist
             ans_color = color_name
     return ans_color
 
