@@ -25,7 +25,9 @@ EXCLUDE_VIDEOS = [
     str(VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4")
 ]  # this is our test set
 ALL_VIDEOS = [
-    video_path for video_path in ALL_VIDEOS_PATHS if video_path not in EXCLUDE_VIDEOS
+    Path(video_path)
+    for video_path in ALL_VIDEOS_PATHS
+    if video_path not in EXCLUDE_VIDEOS
 ]
 
 
