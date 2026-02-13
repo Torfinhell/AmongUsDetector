@@ -85,9 +85,11 @@ def inference_qwen(
         ) as finished_csv:
             while True:
                 current_videos = set(
-                    video_name for video_name in pd.read_csv(started_csv)["video_name"]
+                    video_name
+                    for video_name in pd.read_csv(started_csv.file_csv)["video_name"]
                 ) + set(
-                    video_name for video_name in pd.read_csv(finished_csv)["video_name"]
+                    video_name
+                    for video_name in pd.read_csv(finished_csv.file_csv)["video_name"]
                 )
                 videos_left = set([file.stem for file in ALL_VIDEOS]) - current_videos
                 if len(videos_left) == 0:
