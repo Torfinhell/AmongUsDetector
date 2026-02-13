@@ -45,7 +45,7 @@ uv run -m scripts.inference_qwen inference_qwen \
   --output_folder=data/image_train_data/train \
   --yandex_token=YOUR_TOKEN
 ```
-## Traning and inference
+## Training and inference
 ### For synthesized data
 To train model run:
 ```

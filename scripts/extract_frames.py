@@ -21,7 +21,7 @@ from src.utils import ALL_VIDEOS_PATHS, CsvChunkDownloader, delete_img_in_folder
 app = App(name="Define Config for generating frames for testing:")
 VIDEO_FOLDER = Path("data/videos")
 EXCLUDE_VIDEOS = [
-    VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4"
+    str(VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4")
 ]  # this is our test set
 ALL_VIDEOS = [
     video_path for video_path in ALL_VIDEOS_PATHS if video_path not in EXCLUDE_VIDEOS

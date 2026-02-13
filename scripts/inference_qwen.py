@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -9,6 +10,7 @@ from PIL import Image
 from tqdm.auto import tqdm
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
+os.environ["MPLBACKEND"] = "agg"
 from src.utils import (
     ALL_VIDEOS_PATHS,
     CsvChunkDownloader,
@@ -22,7 +24,7 @@ MODEL_ID = "Qwen/Qwen3-VL-8B-Instruct"
 UPDATE_CSV_EVERY_IMAGE = 400
 VIDEO_FOLDER = Path("data/videos")
 EXCLUDE_VIDEOS = [
-    VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4"
+    str(VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4")
 ]  # this is our test set
 ALL_VIDEOS = [
     video_path for video_path in ALL_VIDEOS_PATHS if video_path not in EXCLUDE_VIDEOS
