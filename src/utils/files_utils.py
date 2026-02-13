@@ -34,8 +34,8 @@ class CsvChunkDownloader:
             self.client = yadisk.Client(token=self.yandex_token)
 
     def __enter__(self):
+        remote_path = f"/{self.file_csv.name}"
         if self.download_from_disk and self.client.exists(remote_path):
-            remote_path = f"/{self.file_csv.name}"
             print(f"Downloading existing CSV from Yandex.Disk: {remote_path}")
             self.client.download(remote_path, str(self.file_csv))
         print(f"Creating file {self.file_csv} and updating each {self.chunk_rows} rows")
