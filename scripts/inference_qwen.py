@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -10,7 +9,6 @@ from PIL import Image
 from tqdm.auto import tqdm
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
-os.environ["MPLBACKEND"] = "agg"
 from src.utils import (
     ALL_VIDEOS_PATHS,
     CsvChunkDownloader,
