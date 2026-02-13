@@ -219,3 +219,5 @@ logs
 lightning_logs
 *.zip
 experiments
+
+check.png

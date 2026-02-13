@@ -105,7 +105,6 @@ def inference_qwen(
                 for idx, row in input_csv[
                     input_csv["video_name"] == video_name
                 ].iterrows():
-                    print(row)
                     file_name = row["file_name"]
                     extracted_text = row["extracted_text"]
                     game_state = row["game_state"]
