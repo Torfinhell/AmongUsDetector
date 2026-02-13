@@ -50,4 +50,4 @@ def download_dataset_kaggle():
 if __name__ == "__main__":
     download_checkpoints(GDRIVE_URLS)
     download_dataset(GDRIVE_URLS)
-    download_dataset_kaggle()
+    # download_dataset_kaggle()
