@@ -66,6 +66,11 @@ class CsvChunkDownloader:
 
         self.buffer.clear()
 
+    def get_csv(self):
+        if not self.file_csv.exists():
+            return []
+        return pd.read_csv(self.file_csv)
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.upload_chunk()
         return False
