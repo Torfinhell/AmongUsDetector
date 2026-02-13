@@ -9,7 +9,13 @@ from PIL import Image
 from tqdm.auto import tqdm
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
-from src.utils import CsvChunkDownloader, colors, distance_bgr, hex_to_bgr
+from src.utils import (
+    ALL_VIDEOS_PATHS,
+    CsvChunkDownloader,
+    colors,
+    distance_bgr,
+    hex_to_bgr,
+)
 
 app = App(name="Define Config for generating frames for testing:")
 MODEL_ID = "Qwen/Qwen3-VL-8B-Instruct"
@@ -19,9 +25,7 @@ EXCLUDE_VIDEOS = [
     VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4"
 ]  # this is our test set
 ALL_VIDEOS = [
-    video_path
-    for video_path in VIDEO_FOLDER.iterdir()
-    if video_path not in EXCLUDE_VIDEOS
+    video_path for video_path in ALL_VIDEOS_PATHS if video_path not in EXCLUDE_VIDEOS
 ]
 
 
@@ -99,8 +103,8 @@ def inference_qwen(
                     is_imposter,
                     face_id,
                 ) in input_csv["video_name" == video_name].iterrows():
-                    if game_state != "running":
-                        continue
+                    # if game_state != "running":
+                    #     continue
                     image_path = input_folder / "images" / file_name
                     image = Image.open(image_path).convert("RGB")
                     messages = [

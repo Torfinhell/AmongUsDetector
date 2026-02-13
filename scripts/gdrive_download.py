@@ -9,7 +9,7 @@ GDRIVE_URLS = {
     "dataset": {
         "https://drive.google.com/uc?id=10HMuMEpgW0JaTyPdmMhsnmzg5O3R_Ex8": "data/annotations",
         "https://drive.google.com/uc?id=1oSWcgPzh6TEFNpBzw4qEvEifx2s3wBKA": "data",
-        "https://drive.google.com/uc?id=1wEn7jSji4rp-xfUM5gvaL-e6gN_DYX9K": "./",
+        "https://drive.google.com/uc?id=1wEn7jSji4rp-xfUM5gvaL-e6gN_DYX9K": "./data",
         "https://drive.google.com/uc?id=1LzDgHcTxwoJpMPb09gDnnwcOteKkexDw": "./data",
     },
 }

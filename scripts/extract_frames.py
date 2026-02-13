@@ -16,7 +16,7 @@ from tqdm.auto import tqdm
 
 from scripts.create_face_db import ALIGN, FACE_THR, DetectorBackend, FaceEmbModel
 from scripts.extract_texts import extract_texts
-from src.utils import CsvChunkDownloader, delete_img_in_folder
+from src.utils import ALL_VIDEOS_PATHS, CsvChunkDownloader, delete_img_in_folder
 
 app = App(name="Define Config for generating frames for testing:")
 VIDEO_FOLDER = Path("data/videos")
@@ -24,9 +24,7 @@ EXCLUDE_VIDEOS = [
     VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4"
 ]  # this is our test set
 ALL_VIDEOS = [
-    video_path
-    for video_path in VIDEO_FOLDER.iterdir()
-    if video_path not in EXCLUDE_VIDEOS
+    video_path for video_path in ALL_VIDEOS_PATHS if video_path not in EXCLUDE_VIDEOS
 ]
 MODEL = FaceEmbModel.VGG_Face.value
 USED_DETECTOR = DetectorBackend.FASTMTCNN.value
@@ -73,13 +71,19 @@ def download_frames_from_video(
         upload_frames_path / "images.csv",
         columns=columns,
         yandex_token=yandex_token,
-        chunk_rows=100,
+        chunk_rows=1,
     ) as csv_download:
         for video_path in tqdm(video_folder, leave=True):
             print(video_path)
             cap = cv.VideoCapture(video_path)
+            if not cap.isOpened():
+                print(f"Can't open video {video_path}")
+                continue
             num_frames = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
             fps = int(cap.get(cv.CAP_PROP_FPS))
+            if fps == 0 or num_frames == 0:
+                print(f"Invalid video {video_path}: fps={fps}, frames={num_frames}")
+                continue
             duration = num_frames / fps
             num_frames_per_sec = num_frames_per_sec or fps
             print(

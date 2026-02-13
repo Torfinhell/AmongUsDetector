@@ -5,3 +5,4 @@ from src.utils.files_utils import CsvChunkDownloader, delete_img_in_folder
 from src.utils.iou import iou_score
 from src.utils.nms import nms
 from src.utils.training_utils import FineTuneLearningRateFinder, TestEveryNEpochs
+from src.utils.video_names import ALL_VIDEOS_PATHS
