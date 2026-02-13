@@ -68,7 +68,7 @@ class CsvChunkDownloader:
 
     def get_csv(self, default_columns):
         if not self.file_csv.exists():
-            return pd.Series([], index=default_columns)
+            return pd.DataFrame(columns=default_columns)
         return pd.read_csv(self.file_csv)
 
     def __exit__(self, exc_type, exc_value, traceback):
