@@ -89,7 +89,7 @@ def inference_qwen(
                     for video_name in started_csv.get_csv(
                         default_columns=["video_name"]
                     )["video_name"]
-                ) + set(
+                ) | set(
                     video_name
                     for video_name in finished_csv.get_csv(
                         default_columns=["video_name"]
