@@ -102,15 +102,14 @@ def inference_qwen(
                     break
                 video_name = list(videos_left)[0]
                 started_csv.update_csv(pd.Series([video_name], index=["video_name"]))
-                for (
-                    id,
-                    file_name,
-                    video_name,
-                    extracted_text,
-                    game_state,
-                    is_imposter,
-                    face_id,
-                ) in input_csv[input_csv["video_name"] == video_name].iterrows():
+                for idx, row in input_csv[
+                    input_csv["video_name"] == video_name
+                ].iterrows():
+                    file_name = row["file_name"]
+                    extracted_text = row["extracted_text"]
+                    game_state = row["game_state"]
+                    is_imposter = row["is_imposter"]
+                    face_id = row["face_id"]
                     # if game_state != "running":
                     #     continue
                     image_path = input_folder / "images" / file_name
