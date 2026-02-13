@@ -33,8 +33,7 @@ USED_DETECTOR = DetectorBackend.FASTMTCNN.value
 SIM_THRESHOLD = 0.60
 
 
-# ADD VIDEO PATH to csv file
-@app.command(name="download")  # filter with faces and then filter with text
+@app.command(name="download")
 def download_frames_from_video(
     video_folder: list[str] = ALL_VIDEOS,
     upload_frames_path: str = "data/extracted_frames",
@@ -74,7 +73,7 @@ def download_frames_from_video(
         upload_frames_path / "images.csv",
         columns=columns,
         yandex_token=yandex_token,
-        chunk_rows=1,
+        chunk_rows=100,
     ) as csv_download:
         for video_path in tqdm(video_folder, leave=True):
             print(video_path)

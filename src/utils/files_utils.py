@@ -21,7 +21,7 @@ class CsvChunkDownloader:
         file_csv,
         columns: list[str],
         yandex_token: Optional[str] = None,
-        chunk_rows: int = 100,
+        chunk_rows: Optional[int] = 100,
         download_from_disk=False,
     ):
         self.file_csv = Path(file_csv)
@@ -34,18 +34,17 @@ class CsvChunkDownloader:
             self.client = yadisk.Client(token=self.yandex_token)
 
     def __enter__(self):
-        if self.download_from_disk:
+        if self.download_from_disk and self.client.exists(remote_path):
             remote_path = f"/{self.file_csv.name}"
-            if self.client.exists(remote_path):
-                print(f"Downloading existing CSV from Yandex.Disk: {remote_path}")
-                self.client.download(remote_path, str(self.file_csv))
+            print(f"Downloading existing CSV from Yandex.Disk: {remote_path}")
+            self.client.download(remote_path, str(self.file_csv))
         print(f"Creating file {self.file_csv} and updating each {self.chunk_rows} rows")
         return self
 
     def update_csv(self, new_row: pd.Series):
         self.buffer.append(new_row.to_dict())
 
-        if len(self.buffer) >= self.chunk_rows:
+        if self.chunk_rows is not None and len(self.buffer) >= self.chunk_rows:
             self.upload_chunk()
 
     def upload_chunk(self):
