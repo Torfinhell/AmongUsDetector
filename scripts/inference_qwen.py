@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import supervision as sv
 import torch
@@ -147,7 +148,9 @@ def inference_qwen(
                             int(xmax),
                             int(ymax),
                         )
-                        color_name = get_figure_color(image[xmin:xmax, ymin:ymax, :])
+                        color_name = get_figure_color(
+                            np.array(image[xmin:xmax, ymin:ymax, :])
+                        )
                         finished_csv.update_csv(
                             pd.Series(
                                 [
