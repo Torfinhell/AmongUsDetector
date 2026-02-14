@@ -57,7 +57,7 @@ def inference_qwen(
     )
     processor = AutoProcessor.from_pretrained(MODEL_ID)
     propmpt = """
-    Detect all objects in the image.
+    Detect all among us figures in the image.
     Return ONLY valid JSON in the following format:
     [
     {"label": "<class_name>", "bbox_2d": [x1, y1, x2, y2]}
