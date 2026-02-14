@@ -191,7 +191,7 @@ def get_figure_color(image):
     x_start = max(0, w - w // 10)
     x_end = min(w, w + w // 10)
     center_region = image[y_start:y_end, x_start:x_end]
-    center_pixel = center_region.mean(axis=-1)
+    center_pixel = center_region.mean(axis=(0, 1))
     min_dist = None
     ans_color = None
     for color_name, hex_color in colors:
