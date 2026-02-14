@@ -149,7 +149,7 @@ def inference_qwen(
                             int(ymax),
                         )
                         color_name = get_figure_color(
-                            np.array(image[xmin:xmax, ymin:ymax, :])
+                            np.array(image)[xmin:xmax, ymin:ymax, :]
                         )
                         print(
                             file_name,

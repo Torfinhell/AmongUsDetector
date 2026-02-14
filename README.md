@@ -11,7 +11,6 @@ conda create -n among_us python=3.11
 conda activate among_us
 pip install uv
 uv sync
-uv pip install supervision
 ```
 ## Scripts
 ### For all
