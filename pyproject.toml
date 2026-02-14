@@ -4,21 +4,35 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
+
 dependencies = [
+    "accelerate>=1.12.0",
     "albumentations>=2.0.8",
     "cairosvg>=2.8.2",
     "cyclopts>=4.4.1",
     "deepface>=0.0.98",
+    "easyocr>=1.7.2",
+    "editdistance>=0.8.1",
+    "facenet-pytorch>=2.5.3",
+    "faiss-gpu-cu12>=1.13.2",
     "gdown>=5.2.1",
+    "kagglehub[pandas-datasets]>=1.0.0",
     "lightning>=2.6.0",
     "matplotlib>=3.10.8",
+    "matplotlib-inline>=0.2.1",
     "numpy>=2.3.5",
     "opencv-python>=4.11.0.86",
     "pandas>=2.3.3",
     "pillow>=12.0.0",
     "pre-commit>=4.5.0",
     "progressbar2>=4.5.0",
+    "psycopg[binary]>=3.3.2",
     "pytubefix>=10.3.5",
+    "supervision>=0.27.0.post1",
     "tensorboard>=2.20.0",
+    "tensorflow>=2.20.0,<2.21.0",
+    "tf-keras>=2.20.0",
     "torchvision>=0.24.1",
+    "transformers>=5.1.0",
+    "yadisk[pycurl]>=3.4.0",
 ]
