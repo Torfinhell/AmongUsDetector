@@ -105,7 +105,7 @@ def inference_qwen(
                 started_csv.update_csv(pd.Series([video_name], index=["video_name"]))
                 for idx, row in tqdm(
                     input_csv[input_csv["video_name"] == video_name].iterrows(),
-                    total=len(input_csv),
+                    total=len(input_csv[input_csv["video_name"] == video_name]),
                 ):
                     file_name = row["file_name"]
                     extracted_text = row["extracted_text"]

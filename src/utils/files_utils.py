@@ -60,9 +60,10 @@ class CsvChunkDownloader:
         )
 
         if self.yandex_token is not None:
-            self.client.upload(
-                str(self.file_csv), f"/{self.file_csv.name}", overwrite=True
-            )
+            with self.client:
+                self.client.upload(
+                    str(self.file_csv), f"/{self.file_csv.name}", overwrite=True
+                )
 
         self.buffer.clear()
 
