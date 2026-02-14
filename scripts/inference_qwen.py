@@ -151,6 +151,18 @@ def inference_qwen(
                         color_name = get_figure_color(
                             np.array(image[xmin:xmax, ymin:ymax, :])
                         )
+                        print(
+                            file_name,
+                            video_name,
+                            game_state,
+                            is_imposter,
+                            face_id,
+                            xmin,
+                            ymin,
+                            xmax,
+                            ymax,
+                            color_name,
+                        )
                         finished_csv.update_csv(
                             pd.Series(
                                 [
