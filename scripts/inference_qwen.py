@@ -186,9 +186,12 @@ def inference_qwen(
 def get_figure_color(image):
     h, w, d = image.shape
     assert d == 3
-    center_pixel = (image[h - h // 10 : h + h // 10, w - w // 10 : w + w // 10]).mean(
-        dim=-1
-    )
+    y_start = max(0, h - h // 10)
+    y_end = min(h, h + h // 10)
+    x_start = max(0, w - w // 10)
+    x_end = min(w, w + w // 10)
+    center_region = image[y_start:y_end, x_start:x_end]
+    center_pixel = center_region.mean(axis=-1)
     min_dist = None
     ans_color = None
     for color_name, hex_color in colors:
