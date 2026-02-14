@@ -78,15 +78,15 @@ def inference_qwen(
         yandex_token=yandex_token,
         chunk_rows=1,
     ) as started_csv:
-        with CsvChunkDownloader(
-            csv_finish,
-            columns=list(input_csv.columns)
-            + ["xmin", "ymin", "xmax", "ymax", "figure_color"],
-            download_from_disk=True,
-            yandex_token=yandex_token,
-            chunk_rows=None,
-        ) as finished_csv:
-            while True:
+        while True:
+            with CsvChunkDownloader(
+                csv_finish,
+                columns=list(input_csv.columns)
+                + ["xmin", "ymin", "xmax", "ymax", "figure_color"],
+                download_from_disk=True,
+                yandex_token=yandex_token,
+                chunk_rows=None,
+            ) as finished_csv:
                 current_videos = set(
                     video_name
                     for video_name in started_csv.get_csv(
