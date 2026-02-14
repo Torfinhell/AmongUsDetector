@@ -103,9 +103,10 @@ def inference_qwen(
                     break
                 video_name = list(videos_left)[0]
                 started_csv.update_csv(pd.Series([video_name], index=["video_name"]))
-                for idx, row in input_csv[
-                    input_csv["video_name"] == video_name
-                ].iterrows():
+                for idx, row in tqdm(
+                    input_csv[input_csv["video_name"] == video_name].iterrows(),
+                    total=len(input_csv),
+                ):
                     file_name = row["file_name"]
                     extracted_text = row["extracted_text"]
                     game_state = row["game_state"]
