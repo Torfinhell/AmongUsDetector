@@ -178,20 +178,39 @@ def download_frames_from_video(
 
 
 def filter_texts(texts):
-    if any([has_word_inside(text, ["voting end", "Voting R"]) for text in texts]):
+    if any(
+        [
+            has_word_inside(
+                text,
+                [
+                    "voting end",
+                    "Voting Result",
+                    "has voted",
+                    "SKIP VOTE",
+                    "Voting Result",
+                    "VotingEnds",
+                    "Proceeding In:",
+                ],
+                3,
+            )
+            for text in texts
+        ]
+    ):
         return "voting"
-    elif any([has_word_inside(text, ["Who is t"]) for text in texts]):
+    elif any([has_word_inside(text, ["Who is t", "Begins In"], 3) for text in texts]):
         return "meeting"
-    elif any([has_word_inside(text, ["Your role"]) for text in texts]):
-        return "reavealing role"
-    elif any([has_word_inside(text, ["Fix Lights"]) for text in texts]):
+    elif any([has_word_inside(text, ["Your role"], 3) for text in texts]):
+        return "revealing role"
+    elif any([has_word_inside(text, ["Fix Lights"], 3) for text in texts]):
         return "lights"
     elif any([has_word_inside(text, ["EMERGENCY"]) for text in texts]):
         return "emergency button"
     elif any([has_word_inside(text, ["dead body"]) for text in texts]):
         return "dead body"
-    elif any([has_word_inside(text, ["Oxygen Depleted"]) for text in texts]):
+    elif any([has_word_inside(text, ["Oxygen Depleted"], 3) for text in texts]):
         return "oxygen"
+    elif any([has_word_inside(text, ["Reactor"], 3) for text in texts]):
+        return "reactor"
     elif any([has_word_inside(text, ["ping: ms"], 4) for text in texts]):
         return "running"
     return None

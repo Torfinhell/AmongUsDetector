@@ -125,7 +125,8 @@ def inference_qwen(
                         "lights",
                         "dead body",
                         "oxygen",
-                        "reavealing role",
+                        "revealing role",
+                        "reactor",
                     ]:
                         continue
                     # if game_state != "running":
