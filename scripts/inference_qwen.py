@@ -72,6 +72,13 @@ def inference_qwen(
     input_csv = pd.read_csv(input_folder / "images.csv")
     csv_start = "started_inference_qwen.csv"
     csv_finish = "finshed_inference_qwen.csv"
+    new_columns = list(input_csv.columns) + [
+        "xmin",
+        "ymin",
+        "xmax",
+        "ymax",
+        "figure_color",
+    ]
     with CsvChunkDownloader(
         csv_start,
         columns=["video_name"],
@@ -82,8 +89,7 @@ def inference_qwen(
         while True:
             with CsvChunkDownloader(
                 csv_finish,
-                columns=list(input_csv.columns)
-                + ["xmin", "ymin", "xmax", "ymax", "figure_color"],
+                columns=new_columns,
                 download_from_disk=True,
                 yandex_token=yandex_token,
                 chunk_rows=None,
@@ -152,6 +158,7 @@ def inference_qwen(
                     detections = sv.Detections.from_vlm(
                         vlm=sv.VLM.QWEN_3_VL, result=text, resolution_wh=image.size
                     )
+                    image = np.array(image)
                     for xmin, ymin, xmax, ymax in detections.xyxy:
                         xmin, ymin, xmax, ymax = (
                             int(xmin),
@@ -159,9 +166,10 @@ def inference_qwen(
                             int(xmax),
                             int(ymax),
                         )
-                        color_name = get_figure_color(
-                            np.array(image)[xmin:xmax, ymin:ymax, :]
-                        )
+                        crop = image[ymin:ymax, xmin:xmax, :]
+                        if crop.size == 0:
+                            continue
+                        color_name = get_figure_color(crop)
                         print(
                             file_name,
                             video_name,
@@ -188,7 +196,8 @@ def inference_qwen(
                                     xmax,
                                     ymax,
                                     color_name,
-                                ]
+                                ],
+                                index=new_columns,
                             )
                         )
 
@@ -196,10 +205,14 @@ def inference_qwen(
 def get_figure_color(image):
     h, w, d = image.shape
     assert d == 3
-    y_start = max(0, h - h // 10)
-    y_end = min(h, h + h // 10)
-    x_start = max(0, w - w // 10)
-    x_end = min(w, w + w // 10)
+    y_center = h // 2
+    x_center = w // 2
+    dy = h // 10
+    dx = w // 10
+    y_start = max(0, y_center - dy)
+    y_end = min(h, y_center + dy)
+    x_start = max(0, x_center - dx)
+    x_end = min(w, x_center + dx)
     center_region = image[y_start:y_end, x_start:x_end]
     center_pixel = center_region.mean(axis=(0, 1))
     min_dist = None
