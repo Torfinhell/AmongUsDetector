@@ -112,8 +112,8 @@ def inference_qwen(
                     game_state = row["game_state"]
                     is_imposter = row["is_imposter"]
                     face_id = row["face_id"]
-                    # if game_state != "running":
-                    #     continue
+                    if game_state != "running":
+                        continue
                     image_path = input_folder / "images" / file_name
                     image = Image.open(image_path).convert("RGB")
                     messages = [
