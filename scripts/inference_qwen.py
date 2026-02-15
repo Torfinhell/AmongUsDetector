@@ -10,6 +10,7 @@ from PIL import Image
 from tqdm.auto import tqdm
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
+from scripts.extract_frames import filter_texts
 from src.utils import (
     ALL_VIDEOS_PATHS,
     CsvChunkDownloader,
@@ -112,8 +113,17 @@ def inference_qwen(
                     game_state = row["game_state"]
                     is_imposter = row["is_imposter"]
                     face_id = row["face_id"]
-                    if game_state != "running":
+                    filter_text = filter_texts(extracted_text)
+                    if filter_text not in [
+                        "running",
+                        "lights",
+                        "dead body",
+                        "oxygen",
+                        "reavealing role",
+                    ]:
                         continue
+                    # if game_state != "running":
+                    #     continue
                     image_path = input_folder / "images" / file_name
                     image = Image.open(image_path).convert("RGB")
                     messages = [

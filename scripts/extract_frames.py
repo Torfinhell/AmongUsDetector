@@ -115,26 +115,9 @@ def download_frames_from_video(
                 if filter_text:
                     texts = extract_texts(frame)
                     data_row.append(texts)
-                    if any([has_word_inside(text, ["voting end"]) for text in texts]):
-                        data_row.append("voting")
-                    elif any([has_word_inside(text, ["Who is t"]) for text in texts]):
-                        data_row.append("meeting")
-                    elif any([has_word_inside(text, ["Your role"]) for text in texts]):
-                        data_row.append("reavealing role")
-                    elif any([has_word_inside(text, ["Fix Lights"]) for text in texts]):
-                        data_row.append("lights")
-                    elif any([has_word_inside(text, ["EMERGENCY"]) for text in texts]):
-                        data_row.append("emergency button")
-                    elif any([has_word_inside(text, ["dead body"]) for text in texts]):
-                        data_row.append("dead body")
-                    elif any(
-                        [has_word_inside(text, ["Oxygen Depleted"]) for text in texts]
-                    ):
-                        data_row.append("oxygen")
-                    elif any(
-                        [has_word_inside(text, ["ping: ms"], 4) for text in texts]
-                    ):
-                        data_row.append("running")
+                    res_filter = filter_text(texts)
+                    if res_filter is not None:
+                        data_row.append(res_filter)
                     else:
                         frame_cnt += 1
                         frames_chosen_cnt += 1
@@ -192,6 +175,26 @@ def download_frames_from_video(
                 frames_chosen_cnt += 1
                 frame_cnt += 1
             cap.release()
+
+
+def filter_texts(texts):
+    if any([has_word_inside(text, ["voting end", "Voting R"]) for text in texts]):
+        return "voting"
+    elif any([has_word_inside(text, ["Who is t"]) for text in texts]):
+        return "meeting"
+    elif any([has_word_inside(text, ["Your role"]) for text in texts]):
+        return "reavealing role"
+    elif any([has_word_inside(text, ["Fix Lights"]) for text in texts]):
+        return "lights"
+    elif any([has_word_inside(text, ["EMERGENCY"]) for text in texts]):
+        return "emergency button"
+    elif any([has_word_inside(text, ["dead body"]) for text in texts]):
+        return "dead body"
+    elif any([has_word_inside(text, ["Oxygen Depleted"]) for text in texts]):
+        return "oxygen"
+    elif any([has_word_inside(text, ["ping: ms"], 4) for text in texts]):
+        return "running"
+    return None
 
 
 def has_word_inside(text, words, num_subst=2):
