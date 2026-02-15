@@ -36,8 +36,9 @@ class CsvChunkDownloader:
     def __enter__(self):
         remote_path = f"/{self.file_csv.name}"
         if self.download_from_disk and self.client.exists(remote_path):
-            print(f"Downloading existing CSV from Yandex.Disk: {remote_path}")
-            self.client.download(remote_path, str(self.file_csv))
+            with self.client:
+                print(f"Downloading existing CSV from Yandex.Disk: {remote_path}")
+                self.client.download(remote_path, str(self.file_csv))
         print(f"Creating file {self.file_csv} and updating each {self.chunk_rows} rows")
         return self
 
@@ -50,7 +51,11 @@ class CsvChunkDownloader:
     def upload_chunk(self):
         if not self.buffer:
             return
-
+        remote_path = f"/{self.file_csv.name}"
+        if self.download_from_disk and self.client.exists(remote_path):
+            with self.client:
+                print(f"Downloading existing CSV from Yandex.Disk: {remote_path}")
+                self.client.download(remote_path, str(self.file_csv))
         df_chunk = pd.DataFrame(self.buffer, columns=self.columns)
         df_chunk.to_csv(
             self.file_csv,
