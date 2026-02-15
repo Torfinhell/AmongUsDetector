@@ -211,6 +211,10 @@ def filter_texts(texts):
         return "oxygen"
     elif any([has_word_inside(text, ["Reactor"], 3) for text in texts]):
         return "reactor"
+    elif any([has_word_inside(text, ["Communication"], 3) for text in texts]):
+        return "opened map"
+    # elif any([has_word_inside(text, ["Estimated", "My tablet"], 2) for text in texts]):
+    #     return "tasks"
     elif any([has_word_inside(text, ["ping: ms"], 4) for text in texts]):
         return "running"
     return None
