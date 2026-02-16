@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 from typing import Optional
 
@@ -116,6 +117,8 @@ def inference_qwen(
                 ):
                     file_name = row["file_name"]
                     extracted_text = row["extracted_text"]
+                    if isinstance(extracted_text, str):
+                        extracted_text = ast.literal_eval(extracted_text)
                     game_state = row["game_state"]
                     is_imposter = row["is_imposter"]
                     face_id = row["face_id"]
