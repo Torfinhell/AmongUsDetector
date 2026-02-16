@@ -120,6 +120,7 @@ def inference_qwen(
                     is_imposter = row["is_imposter"]
                     face_id = row["face_id"]
                     filter_text = filter_texts(extracted_text)
+                    print(filter_text)
                     if filter_text not in [
                         "running",
                         "lights",
