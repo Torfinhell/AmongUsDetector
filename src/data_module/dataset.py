@@ -10,7 +10,7 @@ import torchvision.transforms.v2 as v2
 from torch import nn
 from torch.utils.data import Dataset
 
-from .utils import color_to_ind
+from src.utils import color_to_ind
 
 
 class AmongUsImagesDataset(Dataset):

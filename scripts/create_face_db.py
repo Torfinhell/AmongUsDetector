@@ -9,16 +9,15 @@ from cyclopts import App
 from deepface import DeepFace
 from tqdm.auto import tqdm
 
-from src.utils import delete_img_in_folder
+from src.utils import ALL_VIDEOS_PATHS, delete_img_in_folder
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 app = App(name="Define Config for generating frames for testing:")
 VIDEO_FOLDER = Path("data/videos")
-EXCLUDE_VIDEOS = [VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4"]
+EXCLUDE_VIDEOS = [
+    str(VIDEO_FOLDER / "DUMBEST SIDEMEN AMONG US EVER.mp4")
+]  # this is our test set
 ALL_VIDEOS = [
-    video_path
-    for video_path in VIDEO_FOLDER.iterdir()
-    if video_path not in EXCLUDE_VIDEOS
+    video_path for video_path in ALL_VIDEOS_PATHS if video_path not in EXCLUDE_VIDEOS
 ]
 
 

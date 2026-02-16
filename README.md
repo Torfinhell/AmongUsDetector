@@ -55,7 +55,7 @@ To train model run:
   --test_folder=data/image_train_data/test \
   --batch_size=35 --num_epochs=300 \
   --seed=42 --val_epoch_len=50 \
-  --train_epoch_len=500 --val_epoch_len=50 \
+  --train_epoch_len=500 \
   --swa_epoch_start=250 --background_folder=data/maps \
   --head_lr=8e-3 --backbone_lr=8e-3 \
   --swa_lrs=5e-4
