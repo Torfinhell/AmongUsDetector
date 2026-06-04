@@ -1,3 +1,5 @@
+import os
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -40,14 +42,14 @@ def download_dataset(gdrive_urls):
 
 
 def download_dataset_kaggle():
-    dataset_path = kagglehub.dataset_download(
-        "nikitasolonitsyn/among_us_detection", output_dir="data"
-    )
-    dataset_path = f"data/{dataset_path}"
-    print("Dataset downloaded to:", dataset_path)
+    downloaded_path = kagglehub.dataset_download("nikitasolonitsyn/among_us_detection")
+    target_path = "./data"
+    if not os.path.exists(target_path):
+        shutil.copytree(downloaded_path, target_path)
+    print("Dataset available at:", target_path)
 
 
 if __name__ == "__main__":
     download_checkpoints(GDRIVE_URLS)
     download_dataset(GDRIVE_URLS)
-    # download_dataset_kaggle()
+    # download_dataset_kaggle() #TODO check this

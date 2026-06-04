@@ -1,12 +1,20 @@
 from copy import deepcopy
+from typing import Optional
 
 import lightning as L
 from torch.utils.data import DataLoader
 
-from src.configs import DataModuleConfig, DatasetCreationConfig, TransformConfig
-from src.data_module.dataset import AmongUsImagesDataset
+from src.configs import (
+    DataModuleConfig,
+    DatasetCreationConfig,
+    TransformConfig,
+    VideoConfig,
+)
 from src.data_module.generate import generate_data
 from src.transforms import FcosTransform
+
+from .dataset import AmongUsImagesDataset
+from .video_dataset import AmongUsVideoDataset
 
 
 def collate_fn(batch):
@@ -25,6 +33,7 @@ class AmongUsDatamodule(L.LightningDataModule):
         datamodule_cfg: DataModuleConfig,
         creation_cfg: DatasetCreationConfig,
         transform_cfg: TransformConfig,
+        video_cfg: Optional[VideoConfig] = None,  # define this if dataset is from video
     ):
         super().__init__()
         self.creation_cfg = deepcopy(creation_cfg)
@@ -40,6 +49,9 @@ class AmongUsDatamodule(L.LightningDataModule):
         self.generate_new = datamodule_cfg.generate_new
         self.transform_cfg = transform_cfg
         self.generate_every_epoch = datamodule_cfg.generate_every_epoch
+        self.is_video = video_cfg is not None
+        if self.is_video:
+            self.frames_per_sec = video_cfg
 
     def setup(self, stage):
         if (
@@ -72,10 +84,16 @@ class AmongUsDatamodule(L.LightningDataModule):
                 transform=FcosTransform(self.transform_cfg, part="test"),
             )
         if stage == "predict":
-            self.pred_dataset = AmongUsImagesDataset(
-                path_to_images=self.predict_data,
-                transform=FcosTransform(self.transform_cfg, part="pred"),
-            )
+            if self.video_cfg is None:
+                self.pred_dataset = AmongUsImagesDataset(
+                    path_to_images=self.predict_data,
+                    transform=FcosTransform(self.transform_cfg, part="pred"),
+                )
+            else:
+                self.pred_dataset = AmongUsVideoDataset(
+                    **self.video_cfg,
+                    transform=FcosTransform(self.transform_cfg, part="pred"),
+                )
 
     def train_dataloader(self):
         if (

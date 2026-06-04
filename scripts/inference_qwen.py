@@ -9,7 +9,9 @@ import torch
 from cyclopts import App
 from PIL import Image
 from tqdm.auto import tqdm
-from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+
+# CHANGED: Swapped Qwen3VLForConditionalGeneration with AutoModelForVision2Seq
+from transformers import AutoModelForVision2Seq, AutoProcessor
 
 from scripts.extract_frames import filter_texts
 from src.utils import (
@@ -49,10 +51,11 @@ def inference_qwen(
     :type max_new_tokens: int
     :param output_folder: output folder containing the same images and images.csv
     :type output_folder: str
-    :param yandex_token: token to download to yandex disk(see https://oauth.yandex.ru/). Will be used to inference multiple qwens on seperate accounts in kaggle
+    :param yandex_token: token to download to yandex disk(see https://yandex.ru). Will be used to inference multiple qwens on seperate accounts in kaggle
     :type output_folder: Optional[str]
     """
-    model = Qwen3VLForConditionalGeneration.from_pretrained(
+    # CHANGED: Initialized via AutoModelForVision2Seq wrapper instead of explicit class
+    model = AutoModelForVision2Seq.from_pretrained(
         MODEL_ID,
         dtype=torch.bfloat16,
         device_map="auto",

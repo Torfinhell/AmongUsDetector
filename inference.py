@@ -28,7 +28,6 @@ def run_inference(cfg: ModelPredConfig = ModelPredConfig()):
     data_module = AmongUsDatamodule(
         cfg.datamodule_cfg, cfg.creation_cfg, cfg.transform_cfg
     )
-    # Gradient Norm Output
     trainer = L.Trainer(
         accelerator="gpu",
         enable_progress_bar=True,

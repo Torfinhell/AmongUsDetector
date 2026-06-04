@@ -165,8 +165,6 @@ def random_hex_color():
 
 def load_random_background(images, width=800, height=600, border_frac=0.1):
     bg = random.choice(images)
-    if bg is None:
-        raise ValueError(f"Cannot read background image: {img_path}")
     h, w = bg.shape[:2]
     y = np.random.randint(int(h * border_frac), h - height - int(h * border_frac) + 1)
     x = np.random.randint(int(w * border_frac), w - width - int(w * border_frac) + 1)

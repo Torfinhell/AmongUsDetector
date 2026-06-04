@@ -38,12 +38,10 @@ class MetricConfig:
 
 @dataclass
 class DataModuleConfig:
-    generate_new: Annotated[Optional[bool], Parameter(name="--generate_new")] = (
-        True  # TODO
-    )
+    generate_new: Annotated[Optional[bool], Parameter(name="--generate_new")] = True
     generate_every_epoch: Annotated[
         Optional[int], Parameter(name="--generate_every_epoch")
-    ] = 1  # TODO
+    ] = 1
     batch_size: Annotated[int, Parameter(name="--batch_size")] = 35
     num_workers: Annotated[int, Parameter(name="--num_workers")] = 4
     val_num_generations: Annotated[int, Parameter(name="--val_num_gen")] = 1750  # 50*35
