@@ -32,8 +32,8 @@ dependencies = [
     "tensorboard>=2.18.0",
     "tensorflow>=2.18.0,<2.19.0",
     "tf-keras>=2.18.0",
-    "torch==2.6.1",
-    "torchvision==0.21.1",
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
     "transformers>=4.57.0",
     "yadisk[pycurl]>=3.4.0",
 ]
