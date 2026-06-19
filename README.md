@@ -18,6 +18,7 @@ This script downloads checkpoint for inferencing, xml anotations for test, datab
 ```
 uv run scripts/gdrive_download.py
 ```
+### To create Test Self-Annotated dataset
 To create test folder for training from xml anotations run:
 ```
 uv run scripts/test_from_annotations.py create \
@@ -25,6 +26,18 @@ uv run scripts/test_from_annotations.py create \
   --image_dir=data/extracted_frames \
   --output_folder=data/image_train_data/test
 
+```
+### To create Synthesized dataset
+To generate dataset(train/val) with synthesized figures:
+```
+uv run -m src.data_module.generate generate-data \
+  --dest_folder=data/image_train_data \
+  --num_generation=500 \
+  --num_figures=20 \
+  --augment_figure=True \
+  --augment_mask=True \
+  --draw_bbox=False \
+  --background_folder=data/maps
 ```
 ### To create Qwen3-Vl-annotated data
 To create filtered data for Qwen3-Vl:
@@ -45,6 +58,14 @@ uv run -m scripts.inference_qwen inference_qwen \
   --output_folder=data/image_train_data/train \
   --yandex_token=YOUR_TOKEN
 ```
+If Qwen3-Vl is already inferenced(the data downloaded via scripts/gdrive_download.py), to create data(train/val) from it:
+```
+uv run -m scripts.extract_qwen extract_qwen
+  --dest_folder=data/image_train_data
+  --input_folder=data/extracted_frames
+  --input_csv=data/finshed_inference_qwen.csv
+```
+
 ## Training and inference
 ### For synthesized data
 To train model run:
@@ -92,8 +113,8 @@ uv run inference.py run_inference \
 Optional params(see src/configs/all_configs.py for model or dataset configs)
 ```
 ## Inference Checkpoint on video
-TODO
-### Additional scripts
+
+## Additional scripts
 Use this script to download videos from youtube(uploads to data/videos):
 ```
 uv run scripts/download_videos.py
@@ -114,17 +135,6 @@ uv run scripts/extract_frames.py download \
 Optional param:
 --num_frames_per_sec(default: None)
 
-```
-To generate dataset with synthesized figures:
-```
-uv run -m src.data_module.generate generate-data \
-  --dest_folder=data/example \
-  --num_generation=500 \
-  --num_figures=20 \
-  --augment_figure=True \
-  --augment_mask=True \
-  --draw_bbox=False \
-  --background_folder=data/maps
 ```
 To create face database(after that group by folders to produce face_db_final):
 ```
